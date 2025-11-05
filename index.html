@@ -55,6 +55,7 @@
       'model/modelfull.gltf', // 🟢 Replace with your file path
       function (gltf) {
         const model = gltf.scene;
+        model.scale.set(0.5, 0.5, 0.5);
         scene.add(model);
 
         model.traverse(function (child) {
