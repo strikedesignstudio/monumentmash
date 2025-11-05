@@ -55,16 +55,9 @@
       'model/modelfull.gltf', // 🟢 Replace with your file path
       function (gltf) {
         const model = gltf.scene;
-        
-        // Remove any mesh that looks like a floor
-    model.traverse((child) => {
-        if (child.isMesh && (child.name.toLowerCase().includes('floor') || child.name.toLowerCase().includes('plane'))) {
-            child.parent.remove(child);
-        }
-    });
 
         model.scale.set(0.03, 0.03, 0.03);
-         model.position.y -= 0.09; // adjust this value as needed
+         model.position.y -= 0.01; // adjust this value as needed
         scene.add(model);
 
         model.traverse(function (child) {
