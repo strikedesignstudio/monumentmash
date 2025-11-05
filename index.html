@@ -42,51 +42,11 @@
   hemiLight.position.set(0, 2, 0);
   scene.add(hemiLight);
 
-  // --- LOAD GLTF ---
-  const loader = new THREE.GLTFLoader();
+  // --- GLOBAL VARIABLES ---
   const clickableObjects = [];
+  const hoverableObjects = []; // only meshes that should respond to hover
   let INTERSECTED;
   const loadingText = document.getElementById('loading');
-
-  loader.load(
-    'model/modelfull2.gltf',
-    function (gltf) {
-      const model = gltf.scene;
-
-      model.scale.set(0.025, 0.025, 0.025);
-      model.position.y -= 2.5;
-      scene.add(model);
-
-      model.traverse(function (child) {
-        if (child.isMesh) {
-          clickableObjects.push(child);
-          child.material.transparent = true;
-          console.log(child.name);
-        }
-      });
-
-      // --- REMOVE Mesh001 ---
-    const meshToRemove = model.getObjectByName('Mesh001');
-    if (meshToRemove) {
-      scene.remove(meshToRemove);                 // remove from scene
-      const index = clickableObjects.indexOf(meshToRemove);
-      if (index > -1) clickableObjects.splice(index, 1); // remove from clickable array
-      meshToRemove.geometry.dispose();            // free geometry memory
-      if (meshToRemove.material.map) meshToRemove.material.map.dispose(); // free texture
-      meshToRemove.material.dispose();            // free material memory
-    }
-
-      loadingText.remove();
-    },
-    function (xhr) {
-      if (xhr.total) {
-        loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
-      }
-    },
-    function (error) {
-      console.error('GLTF load error:', error);
-    }
-  );
 
   // --- AUDIO SETUP ---
   const listener = new THREE.AudioListener();
@@ -125,27 +85,71 @@
     "Dominic": 0x00ff88
   };
 
+  // --- LOAD AUDIO ---
   audioLoader.load('audio/monmashcomp.mp3', function(buffer) {
     audioBufferShared = buffer;
   });
 
-  // --- RAYCASTING AND CLICK AUDIO ---
+  // --- LOAD GLTF ---
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    'model/modelfull2.gltf',
+    function (gltf) {
+      const model = gltf.scene;
+
+      model.scale.set(0.025, 0.025, 0.025);
+      model.position.y -= 2.5;
+      scene.add(model);
+
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          clickableObjects.push(child);
+          child.material.transparent = true;
+
+          // Only targeted meshes respond to hover
+          if (Object.keys(hoverColorMap).includes(child.name)) {
+            hoverableObjects.push(child);
+          }
+        }
+      });
+
+      // --- REMOVE MESH001 IF NEEDED ---
+      const meshToRemove = model.getObjectByName('Mesh001');
+      if (meshToRemove) {
+        scene.remove(meshToRemove);
+        const index = clickableObjects.indexOf(meshToRemove);
+        if (index > -1) clickableObjects.splice(index, 1);
+        meshToRemove.geometry.dispose();
+        if (meshToRemove.material.map) meshToRemove.material.map.dispose();
+        meshToRemove.material.dispose();
+      }
+
+      loadingText.remove();
+    },
+    function (xhr) {
+      if (xhr.total) {
+        loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+      }
+    },
+    function (error) {
+      console.error('GLTF load error:', error);
+    }
+  );
+
+  // --- RAYCASTING AND AUDIO PLAYBACK ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
   function playFrom(startTime) {
     if (!audioBufferShared) return;
-
-    // Stop previous sound if playing
-    if (currentSource) {
-      currentSource.stop();
-    }
+    if (currentSource) currentSource.stop();
 
     const audioCtx = listener.context;
     const source = audioCtx.createBufferSource();
     source.buffer = audioBufferShared;
-    source.connect(listener.getInput()); // connect to THREE listener for 3D audio
-    source.start(0, startTime); // play from startTime to the end
+    source.connect(listener.getInput());
+    source.start(0, startTime);
+
     currentSource = source;
   }
 
@@ -158,16 +162,14 @@
     if (intersects.length > 0) {
       const clicked = intersects[0].object;
 
-      // Visual feedback
+      // Optional visual feedback
       if (clicked.material && clicked.material.opacity !== undefined) {
         clicked.material.opacity = 0.6;
         setTimeout(() => clicked.material.opacity = 1, 300);
       }
 
       const segmentStart = audioSegments[clicked.name];
-      if (segmentStart !== undefined) {
-        playFrom(segmentStart);
-      }
+      if (segmentStart !== undefined) playFrom(segmentStart);
     }
   }
 
@@ -176,7 +178,7 @@
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(clickableObjects, true);
+    const intersects = raycaster.intersectObjects(hoverableObjects, true); // only hoverable meshes
 
     if (intersects.length > 0) {
       const hovered = intersects[0].object;
@@ -211,7 +213,8 @@
     requestAnimationFrame(animate);
     controls.update();
 
-    clickableObjects.forEach(obj => {
+    // Smooth hover color transitions
+    hoverableObjects.forEach(obj => {
       if (obj.material && obj.material.color && obj.targetColor) {
         obj.material.color.lerp(obj.targetColor, 0.1);
       }
