@@ -141,6 +141,24 @@ meshesToRemove.forEach(name => {
   }
 });
 
+model.traverse(obj => {
+  if (obj.isMesh && obj.name.startsWith('Mesh040')) {
+    console.log('Removing:', obj.name);
+
+    // Remove it from the scene
+    if (obj.parent) obj.parent.remove(obj);
+
+    // Remove from clickable list
+    const idx = clickableObjects.indexOf(obj);
+    if (idx > -1) clickableObjects.splice(idx, 1);
+
+    // Clean up memory
+    obj.geometry.dispose();
+    if (obj.material.map) obj.material.map.dispose();
+    obj.material.dispose();
+  }
+});
+
       loadingText.remove();
     },
     function (xhr) {
