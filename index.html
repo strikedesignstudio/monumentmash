@@ -27,7 +27,8 @@
     // --- SCENE SETUP ---
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
-    camera.position.set(0, 1.5, 5);
+camera.position.set(0, size.y * 0.5, size.z * 2); 
+camera.lookAt(0, 0, 0); 
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -56,8 +57,19 @@
       function (gltf) {
         const model = gltf.scene;
 
-        model.scale.set(0.03, 0.03, 0.03);
-         model.position.y -= 0.01; // adjust this value as needed
+// --- compute bounding box ---
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+
+    // --- center model ---
+    model.position.x -= center.x;
+    model.position.y -= center.y; // adjust further if you want it slightly lower
+    model.position.z -= center.z;
+
+    // --- scale down ---
+    model.scale.set(0.03, 0.03, 0.03);
+    
         scene.add(model);
 
         model.traverse(function (child) {
