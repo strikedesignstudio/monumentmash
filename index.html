@@ -38,9 +38,8 @@
     controls.enableDamping = true;
 
     // --- LIGHTS ---
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    hemiLight.position.set(0, 2, 0);
-    scene.add(hemiLight);
+const ambientLight = new THREE.AmbientLight(0xffffff, 1); // white, full intensity
+scene.add(ambientLight);
 
     // --- LOAD GLTF ---
     const loader = new THREE.GLTFLoader();
