@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Clickable GLTF Scene with Audio (Auto-Fit Safe)</title>
+  <title>Clickable GLTF Scene with Audio (UMD)</title>
   <style>
     body { margin: 0; overflow: hidden; background: #000; }
     canvas { display: block; }
@@ -18,17 +18,16 @@
 <body>
   <div id="loading">Loading 3D Scene...</div>
 
-  <!-- THREE.JS UMD -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
+
 
   <script>
     // --- SCENE SETUP ---
     const scene = new THREE.Scene();
-
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
-    camera.position.set(0, 1.5, 5);
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1, 3);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -39,39 +38,25 @@
     controls.enableDamping = true;
 
     // --- LIGHTS ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
-    scene.add(ambientLight);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    hemiLight.position.set(0, 2, 0);
+    scene.add(hemiLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
     dirLight.position.set(5, 5, 5);
     scene.add(dirLight);
 
-    // --- GLTF LOADER ---
+    // --- LOAD GLTF ---
     const loader = new THREE.GLTFLoader();
     const clickableObjects = [];
     const loadingText = document.getElementById('loading');
 
     loader.load(
-      'model/modelfull.gltf', // 🟢 Replace with your model path
+      'model/modelfull.gltf', // 🟢 Replace with your file path
       function (gltf) {
         const model = gltf.scene;
-
-        // --- SAFE CENTER & SCALE ---
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center); // center model at origin
-
-        // Safe scale: only scale down if too large
-        const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 2) {
-          const scale = 2 / maxDim;
-          model.scale.set(scale, scale, scale);
-        }
-
         scene.add(model);
 
-        // --- CLICKABLE OBJECTS ---
         model.traverse(function (child) {
           if (child.isMesh) {
             clickableObjects.push(child);
@@ -79,21 +64,8 @@
           }
         });
 
-        // --- AUDIO ---
-        assignAudio();
-
-        // --- CAMERA POSITION ---
-        const box2 = new THREE.Box3().setFromObject(model);
-        const boxSize = box2.getSize(new THREE.Vector3());
-        const maxBoxDim = Math.max(boxSize.x, boxSize.y, boxSize.z);
-        const fov = camera.fov * (Math.PI / 180);
-        let cameraZ = Math.abs(maxBoxDim / 2 / Math.tan(fov / 2));
-        cameraZ *= 1.5; // some padding
-        camera.position.set(0, boxSize.y / 2, cameraZ);
-        camera.lookAt(0, 0, 0);
-        controls.update();
-
         loadingText.remove();
+        assignAudio();
       },
       function (xhr) {
         if (xhr.total) {
@@ -112,8 +84,8 @@
 
     const audioMap = {
       "mesh.001": "audio/monmashcomp.mp3",
-      "mesh.002": "audio/monmashcomp.mp3",
-      "mesh.003": "audio/monmashcomp.mp3"
+      "mesh.002": "assets/monmashcomp.mp3",
+      "mesh.003": "assets/monmashcomp.mp3"
     };
 
     function loadAudioForMesh(meshName, filePath) {
@@ -148,12 +120,15 @@
         const clicked = intersects[0].object;
         console.log('Clicked:', clicked.name);
 
+        // visual feedback
         if (clicked.material && clicked.material.opacity !== undefined) {
           clicked.material.opacity = 0.6;
           setTimeout(() => clicked.material.opacity = 1, 300);
         }
 
-        if (clicked.userData.sound) clicked.userData.sound.play();
+        if (clicked.userData.sound) {
+          clicked.userData.sound.play();
+        }
       }
     }
 
@@ -176,3 +151,4 @@
   </script>
 </body>
 </html>
+
