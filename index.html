@@ -45,9 +45,10 @@
 
   // --- GLOBAL VARIABLES ---
   const clickableObjects = [];
-  const hoverableObjects = []; // only meshes that should respond to hover
+  const hoverableObjects = [];
   let INTERSECTED;
   const loadingText = document.getElementById('loading');
+  const label = document.getElementById('meshLabel');
 
   // --- AUDIO SETUP ---
   const listener = new THREE.AudioListener();
@@ -56,6 +57,7 @@
   let audioBufferShared = null;
   let currentSource = null;
 
+  // --- AUDIO SEGMENTS (seconds) ---
   const audioSegments = {
     "Hilmi": 6,
     "Anon": 66,
@@ -71,6 +73,7 @@
     "Dominic": 614.4
   };
 
+  // --- HOVER COLORS ---
   const hoverColorMap = {
     "Hilmi": 0xff0000,
     "Anon": 0x00ff00,
@@ -87,58 +90,47 @@
   };
 
   // --- LOAD AUDIO ---
-  audioLoader.load('audio/monmashcomp.mp3', function(buffer) {
+  audioLoader.load('audio/monmashcomp.mp3', function (buffer) {
     audioBufferShared = buffer;
   });
 
-  // --- LOAD GLTF ---
-  const loader = new THREE.GLTFLoader();
-  loader.load(
-  'model/modelfull2.gltf',
+  // --- LOAD GLTF MODEL ---
+const loader = new THREE.GLTFLoader();
+loader.load(
+  'model/modelfull.gltf',
   function (gltf) {
     const model = gltf.scene;
-
-    model.scale.set(0.026, 0.026, 0.026);
+    model.scale.set(0.025, 0.025, 0.025);
     model.position.y -= 2.5;
     scene.add(model);
 
-    // --- Add meshes to clickable / hoverable arrays ---
+    // --- ADD MESHES TO CLICKABLE/HOVERABLE ARRAYS ---
     model.traverse(function (child) {
       if (child.isMesh) {
         clickableObjects.push(child);
         child.material.transparent = true;
+        console.log(child.name);
+
+        if (Object.keys(hoverColorMap).includes(child.name)) {
+          hoverableObjects.push(child);
+        }
       }
     });
 
-    // --- REMOVE SPECIFIC MESHES AND MESH FAMILIES ---
-    const meshesToRemove = ['Final_Model_bottom_to_building']; // exact matches
-    const meshFamiliesToRemove = ['Mesh040']; // prefix matches
+    // --- REMOVE SPECIFIC MESH FAMILIES ---
+    const meshFamiliesToRemove = ['Mesh040', 'Final_Model_bottom_to_building'];
 
-    // Remove exact matches
-    meshesToRemove.forEach(name => {
-      const obj = model.getObjectByName(name);
-      if (obj) {
-        if (obj.parent) obj.parent.remove(obj);
-        obj.traverse(child => {
-          if (child.isMesh) {
-            const idx = clickableObjects.indexOf(child);
-            if (idx > -1) clickableObjects.splice(idx, 1);
-            child.geometry.dispose();
-            if (child.material.map) child.material.map.dispose();
-            child.material.dispose();
-          }
-        });
-      }
-    });
-
-    // Remove mesh families
     model.traverse(obj => {
       if (obj.isMesh) {
         meshFamiliesToRemove.forEach(prefix => {
           if (obj.name.startsWith(prefix)) {
+            console.log('Removing mesh:', obj.name);
+
             if (obj.parent) obj.parent.remove(obj);
+
             const idx = clickableObjects.indexOf(obj);
             if (idx > -1) clickableObjects.splice(idx, 1);
+
             obj.geometry.dispose();
             if (obj.material.map) obj.material.map.dispose();
             obj.material.dispose();
@@ -149,7 +141,6 @@
 
     // --- REMOVE LOADING TEXT ---
     loadingText.remove();
-
   },
   function (xhr) {
     if (xhr.total) {
@@ -162,10 +153,11 @@
 );
 
 
-  // --- RAYCASTING AND AUDIO PLAYBACK ---
+  // --- RAYCASTING ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
+  // --- PLAY AUDIO SEGMENTS ---
   function playFrom(startTime) {
     if (!audioBufferShared) return;
     if (currentSource) currentSource.stop();
@@ -175,10 +167,10 @@
     source.buffer = audioBufferShared;
     source.connect(listener.getInput());
     source.start(0, startTime);
-
     currentSource = source;
   }
 
+  // --- CLICK EVENTS ---
   function onClick(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -188,7 +180,7 @@
     if (intersects.length > 0) {
       const clicked = intersects[0].object;
 
-      // Optional visual feedback
+      // Visual feedback
       if (clicked.material && clicked.material.opacity !== undefined) {
         clicked.material.opacity = 0.6;
         setTimeout(() => clicked.material.opacity = 1, 300);
@@ -199,21 +191,29 @@
     }
   }
 
+  // --- HOVER EVENTS ---
   function onMouseMove(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(hoverableObjects, true); // only hoverable meshes
+    const intersects = raycaster.intersectObjects(hoverableObjects, true);
 
     if (intersects.length > 0) {
       const hovered = intersects[0].object;
+
+      // --- Label logic ---
+      label.style.display = 'block';
+      label.style.left = event.clientX + 10 + 'px';
+      label.style.top = event.clientY + 10 + 'px';
+      label.innerText = hovered.name;
 
       if (INTERSECTED !== hovered) {
         if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
 
         INTERSECTED = hovered;
-        if (!INTERSECTED.originalColor) INTERSECTED.originalColor = INTERSECTED.material.color.clone();
+        if (!INTERSECTED.originalColor)
+          INTERSECTED.originalColor = INTERSECTED.material.color.clone();
 
         const colorHex = hoverColorMap[INTERSECTED.name] || 0xffff00;
         INTERSECTED.targetColor = new THREE.Color(colorHex);
@@ -221,6 +221,7 @@
     } else {
       if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
       INTERSECTED = null;
+      label.style.display = 'none';
     }
   }
 
@@ -234,12 +235,11 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  // --- ANIMATE ---
+  // --- ANIMATE LOOP ---
   function animate() {
     requestAnimationFrame(animate);
     controls.update();
 
-    // Smooth hover color transitions
     hoverableObjects.forEach(obj => {
       if (obj.material && obj.material.color && obj.targetColor) {
         obj.material.color.lerp(obj.targetColor, 0.1);
@@ -250,6 +250,22 @@
   }
   animate();
 </script>
+
+<!-- Add this to your HTML -->
+<div id="meshLabel"
+     style="
+       position: absolute;
+       background: rgba(0, 0, 0, 0.7);
+       color: white;
+       padding: 4px 8px;
+       border-radius: 4px;
+       font-family: monospace;
+       font-size: 12px;
+       pointer-events: none;
+       display: none;
+     ">
+</div>
+
 
 </body>
 </html>
