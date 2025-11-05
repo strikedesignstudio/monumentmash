@@ -114,52 +114,47 @@
         }
       });
 
-// --- REMOVE SPECIFIC MESHES AND MESH FAMILIES ---
-const meshesToRemove = ['Final_Model_bottom_to_building']; // exact matches
-const meshFamiliesToRemove = ['Mesh040']; // prefix matches
+   // --- REMOVE SPECIFIC MESHES AND MESH FAMILIES ---
+    const meshesToRemove = ['Final_Model_bottom_to_building']; // exact matches
+    const meshFamiliesToRemove = ['Mesh040']; // prefix matches
 
-// 1️⃣ Remove exact matches
-meshesToRemove.forEach(name => {
-  const obj = model.getObjectByName(name);
-  if (obj) {
-    console.log('Removing exact match:', name);
-
-    if (obj.parent) obj.parent.remove(obj);
-
-    obj.traverse(child => {
-      if (child.isMesh) {
-        const idx = clickableObjects.indexOf(child);
-        if (idx > -1) clickableObjects.splice(idx, 1);
-        child.geometry.dispose();
-        if (child.material.map) child.material.map.dispose();
-        child.material.dispose();
-      }
-    });
-  } else {
-    console.warn('Object not found:', name);
-  }
-});
-
-// 2️⃣ Remove all meshes whose names start with any family prefix
-model.traverse(obj => {
-  if (obj.isMesh) {
-    meshFamiliesToRemove.forEach(prefix => {
-      if (obj.name.startsWith(prefix)) {
-        console.log('Removing family match:', obj.name);
-
+    // Remove exact matches
+    meshesToRemove.forEach(name => {
+      const obj = model.getObjectByName(name);
+      if (obj) {
         if (obj.parent) obj.parent.remove(obj);
-
-        const idx = clickableObjects.indexOf(obj);
-        if (idx > -1) clickableObjects.splice(idx, 1);
-
-        obj.geometry.dispose();
-        if (obj.material.map) obj.material.map.dispose();
-        obj.material.dispose();
+        obj.traverse(child => {
+          if (child.isMesh) {
+            const idx = clickableObjects.indexOf(child);
+            if (idx > -1) clickableObjects.splice(idx, 1);
+            child.geometry.dispose();
+            if (child.material.map) child.material.map.dispose();
+            child.material.dispose();
+          }
+        });
       }
     });
-  }
-      loadingText.remove();
-    },
+
+    // Remove mesh families
+    model.traverse(obj => {
+      if (obj.isMesh) {
+        meshFamiliesToRemove.forEach(prefix => {
+          if (obj.name.startsWith(prefix)) {
+            if (obj.parent) obj.parent.remove(obj);
+            const idx = clickableObjects.indexOf(obj);
+            if (idx > -1) clickableObjects.splice(idx, 1);
+            obj.geometry.dispose();
+            if (obj.material.map) obj.material.map.dispose();
+            obj.material.dispose();
+          }
+        });
+      }
+    });
+
+    // --- REMOVE LOADING TEXT ---
+    loadingText.remove();
+
+  },
     function (xhr) {
       if (xhr.total) {
         loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
