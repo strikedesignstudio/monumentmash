@@ -97,7 +97,7 @@
     function (gltf) {
       const model = gltf.scene;
 
-      model.scale.set(0.025, 0.025, 0.025);
+      model.scale.set(0.027, 0.027, 0.027);
       model.position.y -= 2.5;
       scene.add(model);
 
@@ -114,7 +114,7 @@
       });
 
       // --- REMOVE MESH001 IF NEEDED ---
-      const meshToRemove = model.getObjectByName('Mesh001');
+      const meshToRemove = model.getObjectByName('Mesh002');
       if (meshToRemove) {
         scene.remove(meshToRemove);
         const index = clickableObjects.indexOf(meshToRemove);
