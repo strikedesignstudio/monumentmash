@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Clickable GLTF Scene with Audio (UMD, Auto-Fit)</title>
+  <title>Clickable GLTF Scene with Audio (Auto-Fit Safe)</title>
   <style>
     body { margin: 0; overflow: hidden; background: #000; }
     canvas { display: block; }
@@ -39,9 +39,8 @@
     controls.enableDamping = true;
 
     // --- LIGHTS ---
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    hemiLight.position.set(0, 2, 0);
-    scene.add(hemiLight);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+    scene.add(ambientLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
     dirLight.position.set(5, 5, 5);
@@ -53,22 +52,26 @@
     const loadingText = document.getElementById('loading');
 
     loader.load(
-      'model/modelfull.gltf', // 🟢 Replace with your own file path
+      'model/modelfull.gltf', // 🟢 Replace with your model path
       function (gltf) {
         const model = gltf.scene;
 
-        // --- CENTER & SCALE MODEL ---
+        // --- SAFE CENTER & SCALE ---
         const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
         model.position.sub(center); // center model at origin
+
+        // Safe scale: only scale down if too large
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 2 / maxDim; // fit roughly in camera view
-        model.scale.set(scale, scale, scale);
+        if (maxDim > 2) {
+          const scale = 2 / maxDim;
+          model.scale.set(scale, scale, scale);
+        }
 
         scene.add(model);
 
-        // Collect clickable meshes
+        // --- CLICKABLE OBJECTS ---
         model.traverse(function (child) {
           if (child.isMesh) {
             clickableObjects.push(child);
@@ -76,8 +79,21 @@
           }
         });
 
-        loadingText.remove();
+        // --- AUDIO ---
         assignAudio();
+
+        // --- CAMERA POSITION ---
+        const box2 = new THREE.Box3().setFromObject(model);
+        const boxSize = box2.getSize(new THREE.Vector3());
+        const maxBoxDim = Math.max(boxSize.x, boxSize.y, boxSize.z);
+        const fov = camera.fov * (Math.PI / 180);
+        let cameraZ = Math.abs(maxBoxDim / 2 / Math.tan(fov / 2));
+        cameraZ *= 1.5; // some padding
+        camera.position.set(0, boxSize.y / 2, cameraZ);
+        camera.lookAt(0, 0, 0);
+        controls.update();
+
+        loadingText.remove();
       },
       function (xhr) {
         if (xhr.total) {
@@ -96,8 +112,8 @@
 
     const audioMap = {
       "mesh.001": "audio/monmashcomp.mp3",
-      "mesh.002": "assets/monmashcomp.mp3",
-      "mesh.003": "assets/monmashcomp.mp3"
+      "mesh.002": "audio/monmashcomp.mp3",
+      "mesh.003": "audio/monmashcomp.mp3"
     };
 
     function loadAudioForMesh(meshName, filePath) {
@@ -132,15 +148,12 @@
         const clicked = intersects[0].object;
         console.log('Clicked:', clicked.name);
 
-        // Visual feedback
         if (clicked.material && clicked.material.opacity !== undefined) {
           clicked.material.opacity = 0.6;
           setTimeout(() => clicked.material.opacity = 1, 300);
         }
 
-        if (clicked.userData.sound) {
-          clicked.userData.sound.play();
-        }
+        if (clicked.userData.sound) clicked.userData.sound.play();
       }
     }
 
@@ -153,7 +166,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // --- ANIMATION LOOP ---
+    // --- ANIMATE ---
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
