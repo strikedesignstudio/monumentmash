@@ -23,7 +23,6 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-
 <script>
   // --- SCENE SETUP ---
   const scene = new THREE.Scene();
@@ -95,63 +94,54 @@
   });
 
   // --- LOAD GLTF MODEL ---
-const loader = new THREE.GLTFLoader();
-loader.load(
-  'model/modelfull.gltf',
-  function (gltf) {
-    const model = gltf.scene;
-    model.scale.set(0.025, 0.025, 0.025);
-    model.position.y -= 2.5;
-    scene.add(model);
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    'model/modelfull.gltf',
+    function (gltf) {
+      const model = gltf.scene;
+      model.scale.set(0.025, 0.025, 0.025);
+      model.position.y -= 2.5;
+      scene.add(model);
 
-    // --- ADD MESHES TO CLICKABLE/HOVERABLE ARRAYS ---
-    model.traverse(function (child) {
-      if (child.isMesh) {
-        clickableObjects.push(child);
-        child.material.transparent = true;
-        console.log(child.name);
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          clickableObjects.push(child);
+          child.material.transparent = true;
+          console.log(child.name); // logs mesh names to console
 
-        if (Object.keys(hoverColorMap).includes(child.name)) {
-          hoverableObjects.push(child);
+          // Add only hoverable meshes
+          if (Object.keys(hoverColorMap).includes(child.name)) {
+            hoverableObjects.push(child);
+          }
         }
-      }
-    });
+      });
 
-    // --- REMOVE SPECIFIC MESH FAMILIES ---
-    const meshFamiliesToRemove = ['Mesh040', 'Final_Model_bottom_to_building'];
-
-    model.traverse(obj => {
-      if (obj.isMesh) {
-        meshFamiliesToRemove.forEach(prefix => {
-          if (obj.name.startsWith(prefix)) {
-            console.log('Removing mesh:', obj.name);
-
-            if (obj.parent) obj.parent.remove(obj);
-
-            const idx = clickableObjects.indexOf(obj);
-            if (idx > -1) clickableObjects.splice(idx, 1);
-
+      // --- REMOVE THE WOMAN MESH ---
+      const womanMesh = model.getObjectByName('Woman'); // change 'Woman' to the actual name
+      if (womanMesh) {
+        scene.remove(womanMesh);
+        const index = clickableObjects.indexOf(womanMesh);
+        if (index > -1) clickableObjects.splice(index, 1);
+        womanMesh.traverse(obj => {
+          if (obj.isMesh) {
             obj.geometry.dispose();
             if (obj.material.map) obj.material.map.dispose();
             obj.material.dispose();
           }
         });
       }
-    });
 
-    // --- REMOVE LOADING TEXT ---
-    loadingText.remove();
-  },
-  function (xhr) {
-    if (xhr.total) {
-      loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+      loadingText.remove();
+    },
+    function (xhr) {
+      if (xhr.total) {
+        loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+      }
+    },
+    function (error) {
+      console.error('GLTF load error:', error);
     }
-  },
-  function (error) {
-    console.error('GLTF load error:', error);
-  }
-);
-
+  );
 
   // --- RAYCASTING ---
   const raycaster = new THREE.Raycaster();
@@ -265,7 +255,6 @@ loader.load(
        display: none;
      ">
 </div>
-
 
 </body>
 </html>
