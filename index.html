@@ -97,6 +97,11 @@
   loader.load(
     'model/modelfull2.gltf',
     function (gltf) {
+      if (!gltf || !gltf.scene) {
+        console.error('GLTF file did not load properly:', gltf);
+        return;
+      }
+
       const model = gltf.scene;
       model.scale.set(0.026, 0.026, 0.026);
       model.position.y -= 2.5;
@@ -181,7 +186,7 @@
     }
   }
 
-  // --- HOVER EVENTS (colors only, no label) ---
+  // --- HOVER EVENTS (colors only) ---
   function onMouseMove(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -233,6 +238,7 @@
   }
   animate();
 </script>
+
 
 </body>
 </html>
