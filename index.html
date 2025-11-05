@@ -27,7 +27,9 @@
     // --- SCENE SETUP ---
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 1, 3);
+camera.position.set(0, 1.5, 5); // pull back a bit
+camera.fov = 75; // optional, default is 70
+camera.updateProjectionMatrix();
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -51,31 +53,27 @@
     const clickableObjects = [];
     const loadingText = document.getElementById('loading');
 
-    loader.load(
-      'model/modelfull.gltf', // 🟢 Replace with your file path
-      function (gltf) {
-        const model = gltf.scene;
-        scene.add(model);
+    loader.load('model/modelfull.gltf', (gltf) => {
+  const model = gltf.scene;
 
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            clickableObjects.push(child);
-            child.material.transparent = true;
-          }
-        });
+  // center & scale
+  const box = new THREE.Box3().setFromObject(model);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  model.position.sub(center);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const scale = 2 / maxDim;
+  model.scale.set(0.5, 0.5, 0.5);
 
-        loadingText.remove();
-        assignAudio();
-      },
-      function (xhr) {
-        if (xhr.total) {
-          loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
-        }
-      },
-      function (error) {
-        console.error('GLTF load error:', error);
-      }
-    );
+  scene.add(model);
+
+  model.traverse((child) => {
+    if (child.isMesh) clickableObjects.push(child);
+  });
+
+  loadingText.remove();
+  assignAudio();
+});
 
     // --- AUDIO SETUP ---
     const listener = new THREE.AudioListener();
@@ -105,34 +103,6 @@
         }
       });
     }
-
-    // --- RAYCASTING ---
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    function onClick(event) {
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-
-      const intersects = raycaster.intersectObjects(clickableObjects, true);
-      if (intersects.length > 0) {
-        const clicked = intersects[0].object;
-        console.log('Clicked:', clicked.name);
-
-        // visual feedback
-        if (clicked.material && clicked.material.opacity !== undefined) {
-          clicked.material.opacity = 0.6;
-          setTimeout(() => clicked.material.opacity = 1, 300);
-        }
-
-        if (clicked.userData.sound) {
-          clicked.userData.sound.play();
-        }
-      }
-    }
-
-    window.addEventListener('click', onClick);
 
     // --- RESIZE HANDLER ---
     window.addEventListener('resize', function () {
