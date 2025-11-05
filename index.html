@@ -105,6 +105,7 @@
         if (child.isMesh) {
           clickableObjects.push(child);
           child.material.transparent = true;
+           console.log(child.name);
 
           // Only targeted meshes respond to hover
           if (Object.keys(hoverColorMap).includes(child.name)) {
