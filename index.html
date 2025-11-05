@@ -44,7 +44,9 @@
 
   // --- LOAD GLTF ---
   const loader = new THREE.GLTFLoader();
-  const clickableObjects = [];
+const clickableObjects = [];
+let INTERSECTED; // currently hovered object
+const HOVER_COLOR = new THREE.Color(0xff0000); // hover color
   const loadingText = document.getElementById('loading');
 
   loader.load(
@@ -122,6 +124,42 @@
     }
   }
 
+  function onMouseMove(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(clickableObjects, true);
+
+  if (intersects.length > 0) {
+    const hovered = intersects[0].object;
+
+    if (INTERSECTED !== hovered) {
+      // Restore previous hovered mesh color
+      if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
+
+      // Set new hovered mesh
+      INTERSECTED = hovered;
+
+      // Save original color if not saved yet
+      if (!INTERSECTED.originalColor) {
+        INTERSECTED.originalColor = INTERSECTED.material.color.clone();
+      }
+
+      // Set the target color to hover
+      INTERSECTED.targetColor = HOVER_COLOR;
+    }
+  } else {
+    // No intersections, reset previous hovered mesh
+    if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
+    INTERSECTED = null;
+  }
+}
+
+// Listen for mouse movement
+window.addEventListener('mousemove', onMouseMove);
+
+
   window.addEventListener('click', onClick);
 
   // --- RESIZE HANDLER ---
@@ -132,11 +170,19 @@
   });
 
   // --- ANIMATE ---
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-  }
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  // Smooth hover color transition
+  clickableObjects.forEach(obj => {
+    if (obj.material && obj.material.color && obj.targetColor) {
+      obj.material.color.lerp(obj.targetColor, 0.1); // 0.1 = speed of transition
+    }
+  });
+
+  renderer.render(scene, camera);
+}
   animate();
 </script>
 
