@@ -105,11 +105,37 @@
       const model = gltf.scene;
       model.scale.set(0.026, 0.026, 0.026);
       model.position.y -= 2.5;
-      scene.add(model);
 
-      // --- ADD MESHES TO CLICKABLE/HOVERABLE ARRAYS ---
-      model.traverse(function (child) {
-        if (child.isMesh) {
+      const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
+      const toRemove = [];
+
+      // --- Collect unwanted meshes (including their children) ---
+      model.traverse((child) => {
+        if (meshesToRemove.includes(child.name)) {
+          toRemove.push(child);
+        }
+      });
+
+      // --- Remove unwanted meshes & descendants safely ---
+      toRemove.forEach((mesh) => {
+        mesh.traverse((descendant) => {
+          if (descendant.isMesh) {
+            descendant.geometry.dispose();
+            if (descendant.material) {
+              if (Array.isArray(descendant.material)) {
+                descendant.material.forEach((m) => m.dispose());
+              } else {
+                descendant.material.dispose();
+              }
+            }
+          }
+        });
+        if (mesh.parent) mesh.parent.remove(mesh);
+      });
+
+      // --- Populate clickable & hoverable objects ---
+      model.traverse((child) => {
+        if (child.isMesh && !meshesToRemove.includes(child.name)) {
           clickableObjects.push(child);
           child.material.transparent = true;
           if (Object.keys(hoverColorMap).includes(child.name)) {
@@ -118,7 +144,8 @@
         }
       });
 
-      // --- REMOVE LOADING TEXT ---
+      scene.add(model);
+
       if (loadingText) loadingText.remove();
     },
     function (xhr) {
@@ -158,10 +185,9 @@
     if (intersects.length > 0) {
       const clicked = intersects[0].object;
 
-      // Visual feedback
       if (clicked.material && clicked.material.opacity !== undefined) {
         clicked.material.opacity = 0.6;
-        setTimeout(() => clicked.material.opacity = 1, 300);
+        setTimeout(() => (clicked.material.opacity = 1), 300);
       }
 
       const segmentStart = audioSegments[clicked.name];
@@ -196,11 +222,11 @@
     }
   }
 
-  window.addEventListener('mousemove', onMouseMove);
-  window.addEventListener('click', onClick);
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("click", onClick);
 
   // --- RESIZE HANDLER ---
-  window.addEventListener('resize', function () {
+  window.addEventListener("resize", function () {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -211,7 +237,7 @@
     requestAnimationFrame(animate);
     controls.update();
 
-    hoverableObjects.forEach(obj => {
+    hoverableObjects.forEach((obj) => {
       if (obj.material && obj.material.color && obj.targetColor) {
         obj.material.color.lerp(obj.targetColor, 0.1);
       }
@@ -221,7 +247,6 @@
   }
   animate();
 </script>
-
 
 </body>
 </html>
