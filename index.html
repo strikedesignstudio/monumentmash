@@ -141,6 +141,7 @@ loader.load(
     // --- REMOVE LOADING TEXT ---
     loadingText.remove();
   },
+  
   function (xhr) {
     if (xhr.total) {
       loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
