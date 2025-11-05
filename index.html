@@ -65,6 +65,17 @@
         }
       });
 
+      // --- REMOVE Mesh001 ---
+    const meshToRemove = model.getObjectByName('Mesh001');
+    if (meshToRemove) {
+      scene.remove(meshToRemove);                 // remove from scene
+      const index = clickableObjects.indexOf(meshToRemove);
+      if (index > -1) clickableObjects.splice(index, 1); // remove from clickable array
+      meshToRemove.geometry.dispose();            // free geometry memory
+      if (meshToRemove.material.map) meshToRemove.material.map.dispose(); // free texture
+      meshToRemove.material.dispose();            // free material memory
+    }
+
       loadingText.remove();
     },
     function (xhr) {
