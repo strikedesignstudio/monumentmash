@@ -44,18 +44,17 @@
 
   // --- LOAD GLTF ---
   const loader = new THREE.GLTFLoader();
-const clickableObjects = [];
-let INTERSECTED; // currently hovered object
-const HOVER_COLOR = new THREE.Color(0xff0000); // hover color
+  const clickableObjects = [];
+  let INTERSECTED;
   const loadingText = document.getElementById('loading');
 
   loader.load(
-    'model/modelfull.gltf', // 🟢 Replace with your file path
+    'model/modelfull.gltf',
     function (gltf) {
       const model = gltf.scene;
 
       model.scale.set(0.025, 0.025, 0.025);
-      model.position.y -= 2.5; // adjust as needed
+      model.position.y -= 2.5;
       scene.add(model);
 
       model.traverse(function (child) {
@@ -82,18 +81,26 @@ const HOVER_COLOR = new THREE.Color(0xff0000); // hover color
   const listener = new THREE.AudioListener();
   camera.add(listener);
   const audioLoader = new THREE.AudioLoader();
+  const audioBuffer = {}; // shared audio buffer
+  let currentSound = null;
 
-  const audioMap = {
-    "mesh006": "audio/monmashcomp.mp3",
-    "mesh007": "audio/monmashcomp.mp3",
-    "mesh008": "audio/monmashcomp.mp3"
+  // Map meshes to start times (in seconds) and optional lengths
+  const audioSegments = {
+    "mesh006": { start: 0, length: 3 },
+    "mesh007": { start: 5, length: 4 },
+    "mesh008": { start: 10, length: 3 }
   };
 
-const hoverColorMap = {
-  "mesh006": 0xff0000, // red
-  "mesh007": 0x00ff00, // green
-  "mesh008": 0x0000ff  // blue
-};
+  audioLoader.load('audio/monmashcomp.mp3', function(buffer) {
+    audioBuffer.shared = buffer;
+  });
+
+  const hoverColorMap = {
+    "mesh006": 0xff0000,
+    "mesh007": 0x00ff00,
+    "mesh008": 0x0000ff
+  };
+
   // --- RAYCASTING AND CLICK AUDIO ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
@@ -114,59 +121,53 @@ const hoverColorMap = {
         setTimeout(() => clicked.material.opacity = 1, 300);
       }
 
-      // Play or load audio on click
-      if (!clicked.userData.sound && audioMap[clicked.name]) {
+      // Play segment
+      const segment = audioSegments[clicked.name];
+      if (audioBuffer.shared && segment) {
+        if (currentSound && currentSound.isPlaying) currentSound.stop();
+
         const sound = new THREE.Audio(listener);
-        audioLoader.load(audioMap[clicked.name], function (buffer) {
-          sound.setBuffer(buffer);
-          sound.setLoop(false);
-          sound.setVolume(0.7);
-          sound.play();
-          clicked.userData.sound = sound; // save for future clicks
-        });
-      } else if (clicked.userData.sound && !clicked.userData.sound.isPlaying) {
-        clicked.userData.sound.play();
+        sound.setBuffer(audioBuffer.shared);
+        sound.setLoop(false);
+        sound.setVolume(0.7);
+        sound.play(segment.start);
+
+        // Stop after segment length
+        if (segment.length) {
+          setTimeout(() => sound.stop(), segment.length * 1000);
+        }
+
+        currentSound = sound;
       }
     }
   }
 
   function onMouseMove(event) {
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObjects(clickableObjects, true);
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(clickableObjects, true);
 
-  if (intersects.length > 0) {
-    const hovered = intersects[0].object;
+    if (intersects.length > 0) {
+      const hovered = intersects[0].object;
 
-    if (INTERSECTED !== hovered) {
-      // Restore previous hovered mesh color
-      if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
+      if (INTERSECTED !== hovered) {
+        if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
 
-      // Set new hovered mesh
-      INTERSECTED = hovered;
+        INTERSECTED = hovered;
+        if (!INTERSECTED.originalColor) INTERSECTED.originalColor = INTERSECTED.material.color.clone();
 
-      // Save original color if not saved yet
-      if (!INTERSECTED.originalColor) {
-        INTERSECTED.originalColor = INTERSECTED.material.color.clone();
+        const colorHex = hoverColorMap[INTERSECTED.name] || 0xffff00;
+        INTERSECTED.targetColor = new THREE.Color(colorHex);
       }
-
-      // Set the target color to hover
-      const colorHex = hoverColorMap[INTERSECTED.name] || 0xffff00; // fallback color if not in map
-INTERSECTED.targetColor = new THREE.Color(colorHex);
+    } else {
+      if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
+      INTERSECTED = null;
     }
-  } else {
-    // No intersections, reset previous hovered mesh
-    if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
-    INTERSECTED = null;
   }
-}
 
-// Listen for mouse movement
-window.addEventListener('mousemove', onMouseMove);
-
-
+  window.addEventListener('mousemove', onMouseMove);
   window.addEventListener('click', onClick);
 
   // --- RESIZE HANDLER ---
@@ -177,21 +178,21 @@ window.addEventListener('mousemove', onMouseMove);
   });
 
   // --- ANIMATE ---
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
 
-  // Smooth hover color transition
-  clickableObjects.forEach(obj => {
-    if (obj.material && obj.material.color && obj.targetColor) {
-      obj.material.color.lerp(obj.targetColor, 0.1); // 0.1 = speed of transition
-    }
-  });
+    clickableObjects.forEach(obj => {
+      if (obj.material && obj.material.color && obj.targetColor) {
+        obj.material.color.lerp(obj.targetColor, 0.1);
+      }
+    });
 
-  renderer.render(scene, camera);
-}
+    renderer.render(scene, camera);
+  }
   animate();
 </script>
+
 
 </body>
 </html>
