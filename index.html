@@ -81,8 +81,8 @@
   const listener = new THREE.AudioListener();
   camera.add(listener);
   const audioLoader = new THREE.AudioLoader();
-  const audioBuffer = {}; // shared audio buffer
-  let currentSound = null;
+  let audioBufferShared = null;
+  let currentSource = null;
 
   const audioSegments = {
     "Hilmi": 6,
@@ -115,7 +115,7 @@
   };
 
   audioLoader.load('audio/monmashcomp.mp3', function(buffer) {
-    audioBuffer.shared = buffer;
+    audioBufferShared = buffer;
   });
 
   // --- RAYCASTING AND CLICK AUDIO ---
@@ -123,17 +123,19 @@
   const mouse = new THREE.Vector2();
 
   function playFrom(startTime) {
-    if (currentSound && currentSound.isPlaying) currentSound.stop();
+    if (!audioBufferShared) return;
 
-    const sound = new THREE.Audio(listener);
-    sound.setBuffer(audioBuffer.shared);
-    sound.setLoop(false);
-    sound.setVolume(0.7);
+    // Stop previous sound if playing
+    if (currentSource) {
+      currentSource.stop();
+    }
 
-    // Play from startTime until the end of the buffer
-    sound.source.start(0, startTime);
-
-    currentSound = sound;
+    const audioCtx = listener.context;
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBufferShared;
+    source.connect(listener.getInput()); // connect to THREE listener for 3D audio
+    source.start(0, startTime); // play from startTime to the end
+    currentSource = source;
   }
 
   function onClick(event) {
@@ -152,7 +154,7 @@
       }
 
       const segmentStart = audioSegments[clicked.name];
-      if (audioBuffer.shared && segmentStart !== undefined) {
+      if (segmentStart !== undefined) {
         playFrom(segmentStart);
       }
     }
@@ -208,8 +210,6 @@
   }
   animate();
 </script>
-
-
 
 </body>
 </html>
