@@ -47,7 +47,6 @@
   const hoverableObjects = [];
   let INTERSECTED;
   const loadingText = document.getElementById('loading');
-  const label = document.getElementById('meshLabel');
 
   // --- AUDIO SETUP ---
   const listener = new THREE.AudioListener();
@@ -94,64 +93,55 @@
   });
 
   // --- LOAD GLTF MODEL ---
-const loader = new THREE.GLTFLoader();
-loader.load(
-  'model/modelfull2.gltf',
-  function (gltf) {
-    const model = gltf.scene;
-    model.scale.set(0.026, 0.026, 0.026);
-    model.position.y -= 2.5;
-    scene.add(model);
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    'model/modelfull2.gltf',
+    function (gltf) {
+      const model = gltf.scene;
+      model.scale.set(0.026, 0.026, 0.026);
+      model.position.y -= 2.5;
+      scene.add(model);
 
-    // --- ADD MESHES TO CLICKABLE/HOVERABLE ARRAYS ---
-    model.traverse(function (child) {
-      if (child.isMesh) {
-        clickableObjects.push(child);
-        child.material.transparent = true;
-        console.log(child.name);
-
-        if (Object.keys(hoverColorMap).includes(child.name)) {
-          hoverableObjects.push(child);
-        }
-      }
-    });
-
-    // --- REMOVE SPECIFIC MESH FAMILIES ---
-    const meshFamiliesToRemove = ['Mesh040', 'Final_Model_bottom_to_building'];
-
-    model.traverse(obj => {
-      if (obj.isMesh) {
-        meshFamiliesToRemove.forEach(prefix => {
-          if (obj.name.startsWith(prefix)) {
-            console.log('Removing mesh:', obj.name);
-
-            if (obj.parent) obj.parent.remove(obj);
-
-            const idx = clickableObjects.indexOf(obj);
-            if (idx > -1) clickableObjects.splice(idx, 1);
-
-            obj.geometry.dispose();
-            if (obj.material.map) obj.material.map.dispose();
-            obj.material.dispose();
+      // --- ADD MESHES TO CLICKABLE/HOVERABLE ARRAYS ---
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          clickableObjects.push(child);
+          child.material.transparent = true;
+          if (Object.keys(hoverColorMap).includes(child.name)) {
+            hoverableObjects.push(child);
           }
-        });
+        }
+      });
+
+      // --- REMOVE SPECIFIC MESH FAMILIES ---
+      const meshFamiliesToRemove = ['Mesh040', 'Final_Model_bottom_to_building'];
+      model.traverse(obj => {
+        if (obj.isMesh) {
+          meshFamiliesToRemove.forEach(prefix => {
+            if (obj.name.startsWith(prefix)) {
+              if (obj.parent) obj.parent.remove(obj);
+              const idx = clickableObjects.indexOf(obj);
+              if (idx > -1) clickableObjects.splice(idx, 1);
+              obj.geometry.dispose();
+              if (obj.material.map) obj.material.map.dispose();
+              obj.material.dispose();
+            }
+          });
+        }
+      });
+
+      // --- REMOVE LOADING TEXT ---
+      if (loadingText) loadingText.remove();
+    },
+    function (xhr) {
+      if (xhr.total && loadingText) {
+        loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
       }
-    });
-
-    // --- REMOVE LOADING TEXT ---
-    loadingText.remove();
-  },
-  
-  function (xhr) {
-    if (xhr.total) {
-      loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+    },
+    function (error) {
+      console.error('GLTF load error:', error);
     }
-  },
-  function (error) {
-    console.error('GLTF load error:', error);
-  }
-);
-
+  );
 
   // --- RAYCASTING ---
   const raycaster = new THREE.Raycaster();
@@ -191,7 +181,7 @@ loader.load(
     }
   }
 
-  // --- HOVER EVENTS ---
+  // --- HOVER EVENTS (colors only, no label) ---
   function onMouseMove(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -201,12 +191,6 @@ loader.load(
 
     if (intersects.length > 0) {
       const hovered = intersects[0].object;
-
-      // --- Label logic ---
-      label.style.display = 'block';
-      label.style.left = event.clientX + 10 + 'px';
-      label.style.top = event.clientY + 10 + 'px';
-      label.innerText = hovered.name;
 
       if (INTERSECTED !== hovered) {
         if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
@@ -221,7 +205,6 @@ loader.load(
     } else {
       if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
       INTERSECTED = null;
-      label.style.display = 'none';
     }
   }
 
@@ -250,7 +233,6 @@ loader.load(
   }
   animate();
 </script>
-
 
 </body>
 </html>
