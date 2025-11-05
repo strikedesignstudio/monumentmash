@@ -17,21 +17,7 @@
 </head>
 <body>
 
-  <div id="meshLabel" 
-     style="
-       position: absolute;
-       background: rgba(0, 0, 0, 0.7);
-       color: white;
-       padding: 4px 8px;
-       border-radius: 4px;
-       font-family: monospace;
-       font-size: 12px;
-       pointer-events: none;
-       display: none;
-     ">
-</div>
-
-  <div id="loading">Loading Monument Mashup...</div>
+<div id="loading">Loading Monument Mashup...</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
@@ -59,10 +45,9 @@
 
   // --- GLOBAL VARIABLES ---
   const clickableObjects = [];
-  const hoverableObjects = [];
+  const hoverableObjects = []; // only meshes that should respond to hover
   let INTERSECTED;
   const loadingText = document.getElementById('loading');
-  const label = document.getElementById('meshLabel');
 
   // --- AUDIO SETUP ---
   const listener = new THREE.AudioListener();
@@ -71,7 +56,6 @@
   let audioBufferShared = null;
   let currentSource = null;
 
-  // --- AUDIO SEGMENTS (seconds) ---
   const audioSegments = {
     "Hilmi": 6,
     "Anon": 66,
@@ -87,7 +71,6 @@
     "Dominic": 614.4
   };
 
-  // --- HOVER COLORS ---
   const hoverColorMap = {
     "Hilmi": 0xff0000,
     "Anon": 0x00ff00,
@@ -104,17 +87,18 @@
   };
 
   // --- LOAD AUDIO ---
-  audioLoader.load('audio/monmashcomp.mp3', function (buffer) {
+  audioLoader.load('audio/monmashcomp.mp3', function(buffer) {
     audioBufferShared = buffer;
   });
 
-  // --- LOAD GLTF MODEL ---
+  // --- LOAD GLTF ---
   const loader = new THREE.GLTFLoader();
   loader.load(
     'model/modelfull2.gltf',
     function (gltf) {
       const model = gltf.scene;
-      model.scale.set(0.027, 0.027, 0.027);
+
+      model.scale.set(0.026, 0.026, 0.026);
       model.position.y -= 2.5;
       scene.add(model);
 
@@ -122,28 +106,23 @@
         if (child.isMesh) {
           clickableObjects.push(child);
           child.material.transparent = true;
-          console.log(child.name); // logs mesh names to console
 
-          // Add only hoverable meshes
+          // Only targeted meshes respond to hover
           if (Object.keys(hoverColorMap).includes(child.name)) {
             hoverableObjects.push(child);
           }
         }
       });
 
-      // --- REMOVE THE WOMAN MESH ---
-      const womanMesh = model.getObjectByName('Final_Model_bottom_to_building');
-      if (womanMesh) {
-        scene.remove(womanMesh);
-        const index = clickableObjects.indexOf(womanMesh);
+      // --- REMOVE MESH001 IF NEEDED ---
+      const meshToRemove = model.getObjectByName('Final_Model_bottom_to_building');
+      if (meshToRemove) {
+        scene.remove(meshToRemove);
+        const index = clickableObjects.indexOf(meshToRemove);
         if (index > -1) clickableObjects.splice(index, 1);
-        womanMesh.traverse(obj => {
-          if (obj.isMesh) {
-            obj.geometry.dispose();
-            if (obj.material.map) obj.material.map.dispose();
-            obj.material.dispose();
-          }
-        });
+        meshToRemove.geometry.dispose();
+        if (meshToRemove.material.map) meshToRemove.material.map.dispose();
+        meshToRemove.material.dispose();
       }
 
       loadingText.remove();
@@ -158,11 +137,10 @@
     }
   );
 
-  // --- RAYCASTING ---
+  // --- RAYCASTING AND AUDIO PLAYBACK ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
-  // --- PLAY AUDIO SEGMENTS ---
   function playFrom(startTime) {
     if (!audioBufferShared) return;
     if (currentSource) currentSource.stop();
@@ -172,10 +150,10 @@
     source.buffer = audioBufferShared;
     source.connect(listener.getInput());
     source.start(0, startTime);
+
     currentSource = source;
   }
 
-  // --- CLICK EVENTS ---
   function onClick(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -185,7 +163,7 @@
     if (intersects.length > 0) {
       const clicked = intersects[0].object;
 
-      // Visual feedback
+      // Optional visual feedback
       if (clicked.material && clicked.material.opacity !== undefined) {
         clicked.material.opacity = 0.6;
         setTimeout(() => clicked.material.opacity = 1, 300);
@@ -196,43 +174,30 @@
     }
   }
 
-  // --- HOVER EVENTS ---
- function onMouseMove(event) {
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  function onMouseMove(event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObjects(clickableObjects, true); // 👈 all meshes
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(hoverableObjects, true); // only hoverable meshes
 
-  if (intersects.length > 0) {
-    const hovered = intersects[0].object;
+    if (intersects.length > 0) {
+      const hovered = intersects[0].object;
 
-    // --- label logic ---
-    label.style.display = 'block';
-    label.style.left = event.clientX + 10 + 'px';
-    label.style.top = event.clientY + 10 + 'px';
-    label.innerText = hovered.name || '(unnamed mesh)';
-
-    // --- optional: still only color hoverable meshes ---
-    if (Object.keys(hoverColorMap).includes(hovered.name)) {
       if (INTERSECTED !== hovered) {
         if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
+
         INTERSECTED = hovered;
-        if (!INTERSECTED.originalColor)
-          INTERSECTED.originalColor = INTERSECTED.material.color.clone();
-        const colorHex = hoverColorMap[INTERSECTED.name];
+        if (!INTERSECTED.originalColor) INTERSECTED.originalColor = INTERSECTED.material.color.clone();
+
+        const colorHex = hoverColorMap[INTERSECTED.name] || 0xffff00;
         INTERSECTED.targetColor = new THREE.Color(colorHex);
       }
     } else {
       if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
       INTERSECTED = null;
     }
-  } else {
-    if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
-    INTERSECTED = null;
-    label.style.display = 'none';
   }
-}
 
   window.addEventListener('mousemove', onMouseMove);
   window.addEventListener('click', onClick);
@@ -244,11 +209,12 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  // --- ANIMATE LOOP ---
+  // --- ANIMATE ---
   function animate() {
     requestAnimationFrame(animate);
     controls.update();
 
+    // Smooth hover color transitions
     hoverableObjects.forEach(obj => {
       if (obj.material && obj.material.color && obj.targetColor) {
         obj.material.color.lerp(obj.targetColor, 0.1);
@@ -260,20 +226,6 @@
   animate();
 </script>
 
-<!-- Add this to your HTML -->
-<div id="meshLabel"
-     style="
-       position: absolute;
-       background: rgba(0, 0, 0, 0.7);
-       color: white;
-       padding: 4px 8px;
-       border-radius: 4px;
-       font-family: monospace;
-       font-size: 12px;
-       pointer-events: none;
-       display: none;
-     ">
-</div>
 
 
 </body>
