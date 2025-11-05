@@ -24,130 +24,138 @@
 
 
   <script>
-    // --- SCENE SETUP ---
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
-    camera.position.set(0, 0, 5);
+  // --- SCENE SETUP ---
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
+  camera.position.set(0, 0, 5);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    document.body.appendChild(renderer.domElement);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  document.body.appendChild(renderer.domElement);
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
 
-    // --- LIGHTS ---
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    hemiLight.position.set(0, 2, 0);
-    scene.add(hemiLight);
+  // --- LIGHTS ---
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+  hemiLight.position.set(0, 2, 0);
+  scene.add(hemiLight);
 
-    // --- LOAD GLTF ---
-    const loader = new THREE.GLTFLoader();
-    const clickableObjects = [];
-    const loadingText = document.getElementById('loading');
+  // --- LOAD GLTF ---
+  const loader = new THREE.GLTFLoader();
+  const clickableObjects = [];
+  const loadingText = document.getElementById('loading');
 
-    loader.load(
-      'model/modelfull.gltf', // 🟢 Replace with your file path
-      function (gltf) {
-        const model = gltf.scene;
+  loader.load(
+    'model/modelfull.gltf', // 🟢 Replace with your file path
+    function (gltf) {
+      const model = gltf.scene;
 
-        model.scale.set(0.02, 0.02, 0.02);
-         model.position.y -= 3; // adjust this value as needed
-        scene.add(model);
+      model.scale.set(0.025, 0.025, 0.025);
+      model.position.y -= 2.5; // adjust as needed
+      scene.add(model);
 
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            clickableObjects.push(child);
-            child.material.transparent = true;
-          }
-        });
-
-        loadingText.remove();
-        assignAudio();
-      },
-      function (xhr) {
-        if (xhr.total) {
-          loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          clickableObjects.push(child);
+          child.material.transparent = true;
         }
-      },
-      function (error) {
-        console.error('GLTF load error:', error);
+      });
+
+      loadingText.remove();
+      assignAudio();
+    },
+    function (xhr) {
+      if (xhr.total) {
+        loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
       }
-    );
-
-    // --- AUDIO SETUP ---
-    const listener = new THREE.AudioListener();
-    camera.add(listener);
-    const audioLoader = new THREE.AudioLoader();
-
-    const audioMap = {
-      "mesh.006": "audio/monmashcomp.mp3",
-      "mesh.007": "audio/monmashcomp.mp3",
-      "mesh.008": "audio/monmashcomp.mp3"
-    };
-
-    function loadAudioForMesh(meshName, filePath) {
-      const sound = new THREE.Audio(listener);
-      audioLoader.load(filePath, function (buffer) {
-        sound.setBuffer(buffer);
-        sound.setLoop(false);
-        sound.setVolume(0.7);
-      });
-      return sound;
+    },
+    function (error) {
+      console.error('GLTF load error:', error);
     }
+  );
 
-    function assignAudio() {
-      clickableObjects.forEach(function (mesh) {
-        if (audioMap[mesh.name]) {
-          mesh.userData.sound = loadAudioForMesh(mesh.name, audioMap[mesh.name]);
-        }
-      });
-    }
+  // --- AUDIO SETUP ---
+  const listener = new THREE.AudioListener();
+  camera.add(listener);
+  const audioLoader = new THREE.AudioLoader();
 
-    // --- RAYCASTING ---
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
+  const audioMap = {
+    "mesh.006": "audio/monmashcomp.mp3",
+    "mesh.007": "audio/monmashcomp.mp3",
+    "mesh.008": "audio/monmashcomp.mp3"
+  };
 
-    function onClick(event) {
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
+  function loadAudioForMesh(meshName, filePath, mesh) {
+    const sound = new THREE.Audio(listener);
+    audioLoader.load(filePath, function (buffer) {
+      sound.setBuffer(buffer);
+      sound.setLoop(false);
+      sound.setVolume(0.7);
 
-      const intersects = raycaster.intersectObjects(clickableObjects, true);
-      if (intersects.length > 0) {
-        const clicked = intersects[0].object;
-        console.log('Clicked:', clicked.name);
+      // Attach the loaded sound to the mesh
+      mesh.userData.sound = sound;
+    });
+  }
 
-        // visual feedback
-        if (clicked.material && clicked.material.opacity !== undefined) {
-          clicked.material.opacity = 0.6;
-          setTimeout(() => clicked.material.opacity = 1, 300);
-        }
+  function assignAudio() {
+    clickableObjects.forEach(function (mesh) {
+      if (audioMap[mesh.name]) {
+        loadAudioForMesh(mesh.name, audioMap[mesh.name], mesh);
+      }
+    });
+  }
 
-        if (clicked.userData.sound) {
+  // --- RAYCASTING ---
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+
+  function onClick(event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObjects(clickableObjects, true);
+    if (intersects.length > 0) {
+      const clicked = intersects[0].object;
+      console.log('Clicked:', clicked.name);
+
+      // visual feedback
+      if (clicked.material && clicked.material.opacity !== undefined) {
+        clicked.material.opacity = 0.6;
+        setTimeout(() => clicked.material.opacity = 1, 300);
+      }
+
+      // play audio if loaded
+      if (clicked.userData.sound) {
+        if (!clicked.userData.sound.isPlaying) {
           clicked.userData.sound.play();
         }
+      } else {
+        console.log('Audio not yet loaded for', clicked.name);
       }
     }
+  }
 
-    window.addEventListener('click', onClick);
+  window.addEventListener('click', onClick);
 
-    // --- RESIZE HANDLER ---
-    window.addEventListener('resize', function () {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+  // --- RESIZE HANDLER ---
+  window.addEventListener('resize', function () {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
 
-    // --- ANIMATE ---
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-  </script>
+  // --- ANIMATE ---
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+</script>
+
 </body>
 </html>
 
