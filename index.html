@@ -18,14 +18,11 @@
 <body>
   <div id="loading">Loading 3D Scene...</div>
 
-  <!-- ✅ Load Three.js core first -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-  <!-- ✅ Then the helper scripts (must come *after* three.min.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/GLTFLoader.js"></script>
 
-  <!-- ✅ Now your main script -->
   <script>
     // --- SCENE SETUP ---
     const scene = new THREE.Scene();
