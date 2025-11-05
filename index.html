@@ -118,23 +118,6 @@
         }
       });
 
-      // --- REMOVE SPECIFIC MESH FAMILIES ---
-      const meshFamiliesToRemove = ['Mesh040', 'Final_Model_bottom_to_building'];
-      model.traverse(obj => {
-        if (obj.isMesh) {
-          meshFamiliesToRemove.forEach(prefix => {
-            if (obj.name.startsWith(prefix)) {
-              if (obj.parent) obj.parent.remove(obj);
-              const idx = clickableObjects.indexOf(obj);
-              if (idx > -1) clickableObjects.splice(idx, 1);
-              obj.geometry.dispose();
-              if (obj.material.map) obj.material.map.dispose();
-              obj.material.dispose();
-            }
-          });
-        }
-      });
-
       // --- REMOVE LOADING TEXT ---
       if (loadingText) loadingText.remove();
     },
