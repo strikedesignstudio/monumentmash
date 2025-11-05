@@ -62,6 +62,7 @@ const HOVER_COLOR = new THREE.Color(0xff0000); // hover color
         if (child.isMesh) {
           clickableObjects.push(child);
           child.material.transparent = true;
+          console.log(child.name);
         }
       });
 
