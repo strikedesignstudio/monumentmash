@@ -52,36 +52,49 @@
     const loadingText = document.getElementById('loading');
 
     loader.load(
-      'model/modelfull.gltf', // 🟢 Replace with your file path
-      function (gltf) {
-        const model = gltf.scene;
-        scene.add(model);
+  'model/modelfull.gltf',
+  function (gltf) {
+    const model = gltf.scene;
+    scene.add(model);
 
-        // Scale model to fit nicely in camera
+    // --- Compute bounding box ---
+    const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    // --- Center model at origin ---
+    model.position.sub(center);
+
+    // --- Scale model to fit nicely in camera ---
     const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 2 / maxDim; // scale model to fit 2 units roughly
+    const scale = 2 / maxDim; // adjust "2" to desired view size
     model.scale.set(scale, scale, scale);
 
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            clickableObjects.push(child);
-            child.material.transparent = true;
-          }
-        });
+    // --- Update OrbitControls target ---
+    controls.target.set(0, 0, 0);
+    controls.update();
 
-        loadingText.remove();
-        assignAudio();
-      },
-      function (xhr) {
-        if (xhr.total) {
-          loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
-        }
-      },
-      function (error) {
-        console.error('GLTF load error:', error);
+    // --- Traverse meshes ---
+    model.traverse(function (child) {
+      if (child.isMesh) {
+        clickableObjects.push(child);
+        child.material.transparent = true;
       }
-    );
+    });
+
+    loadingText.remove();
+    assignAudio();
+  },
+  function (xhr) {
+    if (xhr.total) {
+      loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+    }
+  },
+  function (error) {
+    console.error('GLTF load error:', error);
+  }
+);
+
 
     // --- AUDIO SETUP ---
     const listener = new THREE.AudioListener();
