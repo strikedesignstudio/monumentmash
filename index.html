@@ -52,8 +52,8 @@
     function (gltf) {
       const model = gltf.scene;
 
-      model.scale.set(0.025, 0.025, 0.025);
-      model.position.y -= 2.5; // adjust as needed
+      model.scale.set(0.02, 0.02, 0.02);
+      model.position.y -= 3; // adjust as needed
       scene.add(model);
 
       model.traverse(function (child) {
@@ -64,7 +64,6 @@
       });
 
       loadingText.remove();
-      assignAudio();
     },
     function (xhr) {
       if (xhr.total) {
@@ -87,27 +86,7 @@
     "mesh.008": "audio/monmashcomp.mp3"
   };
 
-  function loadAudioForMesh(meshName, filePath, mesh) {
-    const sound = new THREE.Audio(listener);
-    audioLoader.load(filePath, function (buffer) {
-      sound.setBuffer(buffer);
-      sound.setLoop(false);
-      sound.setVolume(0.7);
-
-      // Attach the loaded sound to the mesh
-      mesh.userData.sound = sound;
-    });
-  }
-
-  function assignAudio() {
-    clickableObjects.forEach(function (mesh) {
-      if (audioMap[mesh.name]) {
-        loadAudioForMesh(mesh.name, audioMap[mesh.name], mesh);
-      }
-    });
-  }
-
-  // --- RAYCASTING ---
+  // --- RAYCASTING AND CLICK AUDIO ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
@@ -121,19 +100,24 @@
       const clicked = intersects[0].object;
       console.log('Clicked:', clicked.name);
 
-      // visual feedback
+      // Visual feedback
       if (clicked.material && clicked.material.opacity !== undefined) {
         clicked.material.opacity = 0.6;
         setTimeout(() => clicked.material.opacity = 1, 300);
       }
 
-      // play audio if loaded
-      if (clicked.userData.sound) {
-        if (!clicked.userData.sound.isPlaying) {
-          clicked.userData.sound.play();
-        }
-      } else {
-        console.log('Audio not yet loaded for', clicked.name);
+      // Play or load audio on click
+      if (!clicked.userData.sound && audioMap[clicked.name]) {
+        const sound = new THREE.Audio(listener);
+        audioLoader.load(audioMap[clicked.name], function (buffer) {
+          sound.setBuffer(buffer);
+          sound.setLoop(false);
+          sound.setVolume(0.7);
+          sound.play();
+          clicked.userData.sound = sound; // save for future clicks
+        });
+      } else if (clicked.userData.sound && !clicked.userData.sound.isPlaying) {
+        clicked.userData.sound.play();
       }
     }
   }
