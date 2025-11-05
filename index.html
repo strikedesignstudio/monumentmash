@@ -114,27 +114,32 @@
         }
       });
 
-      // --- REMOVE MESH OR GROUP BY NAME ---
-const meshToRemove = model.getObjectByName('Final_Model_bottom_to_building');
-if (meshToRemove) {
-  console.log('Removing:', meshToRemove.name);
+// --- REMOVE SPECIFIC MESHES OR GROUPS ---
+const meshesToRemove = ['Final_Model_bottom_to_building', 'Mesh040'];
 
-  // Remove from scene (it removes all its children too)
-  meshToRemove.parent.remove(meshToRemove);
+meshesToRemove.forEach(name => {
+  const obj = model.getObjectByName(name);
+  if (obj) {
+    console.log('Removing:', name);
 
-  // Clean up memory for meshes inside it
-  meshToRemove.traverse(obj => {
-    if (obj.isMesh) {
-      const idx = clickableObjects.indexOf(obj);
-      if (idx > -1) clickableObjects.splice(idx, 1);
-      obj.geometry.dispose();
-      if (obj.material.map) obj.material.map.dispose();
-      obj.material.dispose();
-    }
-  });
-} else {
-  console.warn('Could not find object: Final_Model_bottom_to_building');
-}
+    // Remove from the scene (or its parent if nested)
+    if (obj.parent) obj.parent.remove(obj);
+
+    // Clean up all meshes inside (geometry + materials)
+    obj.traverse(child => {
+      if (child.isMesh) {
+        const idx = clickableObjects.indexOf(child);
+        if (idx > -1) clickableObjects.splice(idx, 1);
+
+        child.geometry.dispose();
+        if (child.material.map) child.material.map.dispose();
+        child.material.dispose();
+      }
+    });
+  } else {
+    console.warn('Object not found:', name);
+  }
+});
 
       loadingText.remove();
     },
