@@ -18,11 +18,14 @@
 <body>
   <div id="loading">Loading 3D Scene...</div>
 
-  <!-- THREE.JS (UMD/global builds) -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- ✅ Load Three.js core first -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
+  <!-- ✅ Then the helper scripts (must come *after* three.min.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/GLTFLoader.js"></script>
+
+  <!-- ✅ Now your main script -->
   <script>
     // --- SCENE SETUP ---
     const scene = new THREE.Scene();
@@ -52,12 +55,11 @@
     const loadingText = document.getElementById('loading');
 
     loader.load(
-      'model/modelfull.gltf', // 🟢 Replace with your own path
+      'model/modelfull.gltf', // 🟢 Replace with your file path
       function (gltf) {
         const model = gltf.scene;
         scene.add(model);
 
-        // Collect meshes for click detection
         model.traverse(function (child) {
           if (child.isMesh) {
             clickableObjects.push(child);
@@ -66,8 +68,6 @@
         });
 
         loadingText.remove();
-
-        // assign audio to meshes
         assignAudio();
       },
       function (xhr) {
@@ -87,8 +87,8 @@
 
     const audioMap = {
       "mesh.001": "audio/monmashcomp.mp3",
-      "mesh.002": "audio/monmashcomp.mp3",
-      "mesh.003": "audio/monmashcomp.mp3"
+      "mesh.002": "assets/monmashcomp.mp3",
+      "mesh.003": "assets/monmashcomp.mp3"
     };
 
     function loadAudioForMesh(meshName, filePath) {
@@ -109,7 +109,7 @@
       });
     }
 
-    // --- RAYCASTING FOR CLICKS ---
+    // --- RAYCASTING ---
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -123,7 +123,7 @@
         const clicked = intersects[0].object;
         console.log('Clicked:', clicked.name);
 
-        // Visual feedback
+        // visual feedback
         if (clicked.material && clicked.material.opacity !== undefined) {
           clicked.material.opacity = 0.6;
           setTimeout(() => clicked.material.opacity = 1, 300);
@@ -137,21 +137,21 @@
 
     window.addEventListener('click', onClick);
 
-    // --- HANDLE RESIZE ---
+    // --- RESIZE HANDLER ---
     window.addEventListener('resize', function () {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // --- ANIMATION LOOP ---
+    // --- ANIMATE ---
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     }
-
     animate();
   </script>
 </body>
 </html>
+
