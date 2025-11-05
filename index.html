@@ -99,7 +99,7 @@ loader.load(
   'model/modelfull2.gltf',
   function (gltf) {
     const model = gltf.scene;
-    model.scale.set(0.025, 0.025, 0.025);
+    model.scale.set(0.026, 0.026, 0.026);
     model.position.y -= 2.5;
     scene.add(model);
 
@@ -250,20 +250,6 @@ loader.load(
   animate();
 </script>
 
-<!-- Add this to your HTML -->
-<div id="meshLabel"
-     style="
-       position: absolute;
-       background: rgba(0, 0, 0, 0.7);
-       color: white;
-       padding: 4px 8px;
-       border-radius: 4px;
-       font-family: monospace;
-       font-size: 12px;
-       pointer-events: none;
-       display: none;
-     ">
-</div>
 
 </body>
 </html>
