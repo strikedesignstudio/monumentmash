@@ -88,6 +88,11 @@ const HOVER_COLOR = new THREE.Color(0xff0000); // hover color
     "mesh.008": "audio/monmashcomp.mp3"
   };
 
+const hoverColorMap = {
+  "mesh.006": 0xff0000, // red
+  "mesh.007": 0x00ff00, // green
+  "mesh.008": 0x0000ff  // blue
+};
   // --- RAYCASTING AND CLICK AUDIO ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
@@ -147,7 +152,8 @@ const HOVER_COLOR = new THREE.Color(0xff0000); // hover color
       }
 
       // Set the target color to hover
-      INTERSECTED.targetColor = HOVER_COLOR;
+      const colorHex = hoverColorMap[INTERSECTED.name] || 0xffff00; // fallback color if not in map
+INTERSECTED.targetColor = new THREE.Color(colorHex);
     }
   } else {
     // No intersections, reset previous hovered mesh
