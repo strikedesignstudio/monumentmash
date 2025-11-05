@@ -56,6 +56,7 @@
       function (gltf) {
         const model = gltf.scene;
         model.scale.set(0.03, 0.03, 0.03);
+         model.position.y -= 0.5; // adjust this value as needed
         scene.add(model);
 
         model.traverse(function (child) {
