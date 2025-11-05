@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Clickable GLTF Scene with Audio (UMD)</title>
+  <title>Monument Mashup</title>
   <style>
     body { margin: 0; overflow: hidden; background: #000; }
     canvas { display: block; }
@@ -23,7 +23,7 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
 
-  <script>
+<script>
   // --- SCENE SETUP ---
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
@@ -84,7 +84,6 @@
   const audioBuffer = {}; // shared audio buffer
   let currentSound = null;
 
-  // Map meshes to start times (in seconds) and optional lengths
   const audioSegments = {
     "Hilmi": 6,
     "Anon": 66,
@@ -100,19 +99,42 @@
     "Dominic": 614.4
   };
 
+  const hoverColorMap = {
+    "Hilmi": 0xff0000,
+    "Anon": 0x00ff00,
+    "Henry": 0x0000ff,
+    "Sabir": 0xffff00,
+    "Shemi": 0xff00ff,
+    "Hannah": 0x00ffff,
+    "Evodie": 0xff8800,
+    "Marvin": 0x88ff00,
+    "Jessica": 0x0088ff,
+    "Rachid": 0x8800ff,
+    "Jermaine": 0xff0088,
+    "Dominic": 0x00ff88
+  };
+
   audioLoader.load('audio/monmashcomp.mp3', function(buffer) {
     audioBuffer.shared = buffer;
   });
 
-  const hoverColorMap = {
-    "Hilmi": 0xff0000,
-    "mesh007": 0x00ff00,
-    "mesh008": 0x0000ff
-  };
-
   // --- RAYCASTING AND CLICK AUDIO ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
+
+  function playFrom(startTime) {
+    if (currentSound && currentSound.isPlaying) currentSound.stop();
+
+    const sound = new THREE.Audio(listener);
+    sound.setBuffer(audioBuffer.shared);
+    sound.setLoop(false);
+    sound.setVolume(0.7);
+
+    // Play from startTime until the end of the buffer
+    sound.source.start(0, startTime);
+
+    currentSound = sound;
+  }
 
   function onClick(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -122,7 +144,6 @@
     const intersects = raycaster.intersectObjects(clickableObjects, true);
     if (intersects.length > 0) {
       const clicked = intersects[0].object;
-      console.log('Clicked:', clicked.name);
 
       // Visual feedback
       if (clicked.material && clicked.material.opacity !== undefined) {
@@ -130,23 +151,9 @@
         setTimeout(() => clicked.material.opacity = 1, 300);
       }
 
-      // Play segment
-      const segment = audioSegments[clicked.name];
-      if (audioBuffer.shared && segment) {
-        if (currentSound && currentSound.isPlaying) currentSound.stop();
-
-        const sound = new THREE.Audio(listener);
-        sound.setBuffer(audioBuffer.shared);
-        sound.setLoop(false);
-        sound.setVolume(0.7);
-        sound.play(segment.start);
-
-        // Stop after segment length
-        if (segment.length) {
-          setTimeout(() => sound.stop(), segment.length * 1000);
-        }
-
-        currentSound = sound;
+      const segmentStart = audioSegments[clicked.name];
+      if (audioBuffer.shared && segmentStart !== undefined) {
+        playFrom(segmentStart);
       }
     }
   }
@@ -201,6 +208,7 @@
   }
   animate();
 </script>
+
 
 
 </body>
