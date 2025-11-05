@@ -57,6 +57,12 @@
         const model = gltf.scene;
         scene.add(model);
 
+        // Scale model to fit nicely in camera
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 2 / maxDim; // scale model to fit 2 units roughly
+    model.scale.set(scale, scale, scale);
+
         model.traverse(function (child) {
           if (child.isMesh) {
             clickableObjects.push(child);
@@ -84,8 +90,8 @@
 
     const audioMap = {
       "mesh.001": "audio/monmashcomp.mp3",
-      "mesh.002": "assets/monmashcomp.mp3",
-      "mesh.003": "assets/monmashcomp.mp3"
+      "mesh.002": "audio/monmashcomp.mp3",
+      "mesh.003": "audio/monmashcomp.mp3"
     };
 
     function loadAudioForMesh(meshName, filePath) {
