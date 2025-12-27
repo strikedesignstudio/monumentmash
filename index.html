@@ -94,7 +94,7 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
   });
 
   // --- LOAD GLTF MODEL ---
-  const loader = new GLTFLoader();
+const loader = new THREE.GLTFLoader();
   loader.load(
     'model/modelfull2.gltf',
     function (gltf) {
