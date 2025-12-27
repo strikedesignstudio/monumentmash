@@ -23,11 +23,7 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-<script type="module">
-  import * as THREE from 'three';
-  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-  import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-
+<script>
   // --- SCENE SETUP ---
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
@@ -38,7 +34,7 @@
   renderer.outputEncoding = THREE.sRGBEncoding;
   document.body.appendChild(renderer.domElement);
 
-  const controls = new OrbitControls(camera, renderer.domElement);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
   // --- LIGHTS ---
@@ -97,7 +93,7 @@
   });
 
   // --- LOAD GLTF MODEL ---
-  const loader = new GLTFLoader();
+  const loader = new THREE.GLTFLoader();
   loader.load(
     'model/modelfull2.gltf',
     function (gltf) {
@@ -113,14 +109,14 @@
       const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
       const toRemove = [];
 
-      // --- Collect unwanted meshes ---
+      // --- Collect unwanted meshes (including their children) ---
       model.traverse((child) => {
         if (meshesToRemove.includes(child.name)) {
           toRemove.push(child);
         }
       });
 
-      // --- Remove unwanted meshes safely ---
+      // --- Remove unwanted meshes & descendants safely ---
       toRemove.forEach((mesh) => {
         mesh.traverse((descendant) => {
           if (descendant.isMesh) {
@@ -142,15 +138,6 @@
         if (child.isMesh && !meshesToRemove.includes(child.name)) {
           clickableObjects.push(child);
           child.material.transparent = true;
-
-          // Add vortex parameters
-          child.userData.vortex = {
-            angle: Math.random() * Math.PI * 2,
-            radius: 2 + Math.random() * 2,
-            speed: 0.01 + Math.random() * 0.01,
-            ySpeed: 0.002 + Math.random() * 0.002
-          };
-
           if (Object.keys(hoverColorMap).includes(child.name)) {
             hoverableObjects.push(child);
           }
@@ -208,7 +195,7 @@
     }
   }
 
-  // --- HOVER EVENTS ---
+  // --- HOVER EVENTS (colors only) ---
   function onMouseMove(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -248,23 +235,8 @@
   // --- ANIMATE LOOP ---
   function animate() {
     requestAnimationFrame(animate);
-
     controls.update();
 
-    // --- VORTEX MOTION ---
-    clickableObjects.forEach((mesh) => {
-      const vortex = mesh.userData.vortex;
-      if (vortex) {
-        vortex.angle += vortex.speed;
-        mesh.position.x = Math.cos(vortex.angle) * vortex.radius;
-        mesh.position.z = Math.sin(vortex.angle) * vortex.radius;
-
-        mesh.position.y += vortex.ySpeed;
-        if (mesh.position.y > 5) mesh.position.y = -5; // loop vertically
-      }
-    });
-
-    // --- HOVER COLOR LERP ---
     hoverableObjects.forEach((obj) => {
       if (obj.material && obj.material.color && obj.targetColor) {
         obj.material.color.lerp(obj.targetColor, 0.1);
