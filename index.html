@@ -26,11 +26,13 @@
     position: absolute;
     inset: 0%;
 }
-  </style>
+
+.scene-layer {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+
+</style>
 </head>
 <body>
-
-<div class="space-bg"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
@@ -241,6 +243,9 @@
   animate();
 </script>
 
+<div class="space-bg"></div>
+
+<div id="scene-layer"></div>
 
 <img class="clouds-overlay" src="cloudtop.gif">
 
