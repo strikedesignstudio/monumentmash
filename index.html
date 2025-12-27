@@ -127,7 +127,7 @@
   });
 
   // --- LOAD GLTF MODEL ---
-  const loader = new GLTFLoader();
+  const loader = new THREE.GLTFLoader();
   loader.load('model/modelfull2.gltf', function(gltf) {
     if (!gltf || !gltf.scene) return;
     const model = gltf.scene;
