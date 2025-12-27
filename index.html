@@ -16,11 +16,12 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-
 <script>
-
   // --- SCENE SETUP ---
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+  scene.fog = new THREE.FogExp2(0x000000, 0.02);
+
   const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
   camera.position.set(0, 0, 5);
 
@@ -29,7 +30,7 @@
   renderer.outputEncoding = THREE.sRGBEncoding;
   document.body.appendChild(renderer.domElement);
 
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
   // --- LIGHTS ---
@@ -40,6 +41,8 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
   // --- GLOBAL VARIABLES ---
   const clickableObjects = [];
   const hoverableObjects = [];
+  const centerMeshes = [];
+  const tunnelMeshes = [];
   let INTERSECTED;
 
   // --- AUDIO SETUP ---
@@ -49,115 +52,89 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
   let audioBufferShared = null;
   let currentSource = null;
 
-  // --- AUDIO SEGMENTS (seconds) ---
   const audioSegments = {
-    "Hilmi": 6,
-    "Anon": 66,
-    "Henry": 85.2,
-    "Sabir": 120.6,
-    "Shemi": 137.4,
-    "Hannah": 187.2,
-    "Evodie": 240,
-    "Marvin": 270,
-    "Jessica": 327,
-    "Rachid": 444.6,
-    "Jermaine": 557.4,
-    "Dominic": 614.4
+    "Hilmi": 6, "Anon": 66, "Henry": 85.2, "Sabir": 120.6,
+    "Shemi": 137.4, "Hannah": 187.2, "Evodie": 240, "Marvin": 270,
+    "Jessica": 327, "Rachid": 444.6, "Jermaine": 557.4, "Dominic": 614.4
   };
 
-  // --- HOVER COLORS ---
   const hoverColorMap = {
-    "Hilmi": 0xff0000,
-    "Anon": 0x00ff00,
-    "Henry": 0x0000ff,
-    "Sabir": 0xffff00,
-    "Shemi": 0xff00ff,
-    "Hannah": 0x00ffff,
-    "Evodie": 0xff8800,
-    "Marvin": 0x88ff00,
-    "Jessica": 0x0088ff,
-    "Rachid": 0x8800ff,
-    "Jermaine": 0xff0088,
-    "Dominic": 0x00ff88
+    "Hilmi": 0xff0000, "Anon": 0x00ff00, "Henry": 0x0000ff, "Sabir": 0xffff00,
+    "Shemi": 0xff00ff, "Hannah": 0x00ffff, "Evodie": 0xff8800, "Marvin": 0x88ff00,
+    "Jessica": 0x0088ff, "Rachid": 0x8800ff, "Jermaine": 0xff0088, "Dominic": 0x00ff88
   };
 
   // --- LOAD AUDIO ---
-  audioLoader.load('audio/monmashcomp.mp3', function (buffer) {
+  audioLoader.load('audio/monmashcomp.mp3', function(buffer) {
     audioBufferShared = buffer;
   });
 
   // --- LOAD GLTF MODEL ---
-const loader = new THREE.GLTFLoader();
-  loader.load(
-    'model/modelfull2.gltf',
-    function (gltf) {
-      if (!gltf || !gltf.scene) {
-        console.error('GLTF file did not load properly:', gltf);
-        return;
-      }
+  const loader = new THREE.GLTFLoader();
+  loader.load('model/modelfull2.gltf', function(gltf) {
+    if (!gltf || !gltf.scene) return;
+    const model = gltf.scene;
+    model.scale.set(0.026, 0.026, 0.026);
+    model.position.y -= 2.5;
 
-      const model = gltf.scene;
-      model.scale.set(0.026, 0.026, 0.026);
-      model.position.y -= 2.5;
+    const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
+    const toRemove = [];
 
-      const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
-      const toRemove = [];
+    model.traverse((child) => {
+      if (meshesToRemove.includes(child.name)) toRemove.push(child);
+    });
 
-      // --- Collect unwanted meshes ---
-      model.traverse((child) => {
-        if (meshesToRemove.includes(child.name)) {
-          toRemove.push(child);
+    toRemove.forEach(mesh => {
+      mesh.traverse((descendant) => {
+        if (descendant.isMesh) {
+          descendant.geometry.dispose();
+          if (descendant.material) {
+            if (Array.isArray(descendant.material)) descendant.material.forEach(m => m.dispose());
+            else descendant.material.dispose();
+          }
         }
       });
+      if (mesh.parent) mesh.parent.remove(mesh);
+    });
 
-      // --- Remove unwanted meshes safely ---
-      toRemove.forEach((mesh) => {
-        mesh.traverse((descendant) => {
-          if (descendant.isMesh) {
-            descendant.geometry.dispose();
-            if (descendant.material) {
-              if (Array.isArray(descendant.material)) {
-                descendant.material.forEach((m) => m.dispose());
-              } else {
-                descendant.material.dispose();
-              }
-            }
-          }
-        });
-        if (mesh.parent) mesh.parent.remove(mesh);
-      });
+    // --- Populate clickable + hover + center/tunnel meshes ---
+    let meshIndex = 0;
+    model.traverse((child) => {
+      if (child.isMesh && !meshesToRemove.includes(child.name)) {
+        clickableObjects.push(child);
+        child.material.transparent = true;
 
-      // --- Populate clickable & hoverable objects ---
-      model.traverse((child) => {
-        if (child.isMesh && !meshesToRemove.includes(child.name)) {
-          clickableObjects.push(child);
-          child.material.transparent = true;
-
-          // Add vortex parameters
-          child.userData.vortex = {
-            angle: Math.random() * Math.PI * 2,
-            radius: 2 + Math.random() * 2,
-            speed: 0.01 + Math.random() * 0.01,
-            ySpeed: 0.002 + Math.random() * 0.002
+        // Decide which collection: first 10 fixed, rest fly in tunnel
+        if (meshIndex < 10) {
+          centerMeshes.push(child);
+        } else {
+          tunnelMeshes.push(child);
+          child.userData.tunnel = {
+            x: (Math.random() - 0.5) * 10,
+            y: (Math.random() - 0.5) * 10,
+            z: -Math.random() * 50,
+            speed: 0.02 + Math.random() * 0.01,
+            scale: 0.5 + Math.random()
           };
-
-          if (Object.keys(hoverColorMap).includes(child.name)) {
-            hoverableObjects.push(child);
-          }
+          child.position.set(child.userData.tunnel.x, child.userData.tunnel.y, child.userData.tunnel.z);
+          child.scale.setScalar(child.userData.tunnel.scale);
         }
-      });
 
-      scene.add(model);
+        if (hoverColorMap[child.name]) hoverableObjects.push(child);
+        meshIndex++;
+      }
+    });
+
+    scene.add(model);
+  });
 
   // --- RAYCASTING ---
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
-  // --- PLAY AUDIO SEGMENTS ---
   function playFrom(startTime) {
     if (!audioBufferShared) return;
     if (currentSource) currentSource.stop();
-
     const audioCtx = listener.context;
     const source = audioCtx.createBufferSource();
     source.buffer = audioBufferShared;
@@ -166,46 +143,35 @@ const loader = new THREE.GLTFLoader();
     currentSource = source;
   }
 
-  // --- CLICK EVENTS ---
   function onClick(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
-
     const intersects = raycaster.intersectObjects(clickableObjects, true);
     if (intersects.length > 0) {
       const clicked = intersects[0].object;
-
       if (clicked.material && clicked.material.opacity !== undefined) {
         clicked.material.opacity = 0.6;
-        setTimeout(() => (clicked.material.opacity = 1), 300);
+        setTimeout(() => clicked.material.opacity = 1, 300);
       }
-
       const segmentStart = audioSegments[clicked.name];
       if (segmentStart !== undefined) playFrom(segmentStart);
     }
   }
 
-  // --- HOVER EVENTS ---
   function onMouseMove(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(hoverableObjects, true);
 
     if (intersects.length > 0) {
       const hovered = intersects[0].object;
-
       if (INTERSECTED !== hovered) {
         if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
-
         INTERSECTED = hovered;
-        if (!INTERSECTED.originalColor)
-          INTERSECTED.originalColor = INTERSECTED.material.color.clone();
-
-        const colorHex = hoverColorMap[INTERSECTED.name] || 0xffff00;
-        INTERSECTED.targetColor = new THREE.Color(colorHex);
+        if (!INTERSECTED.originalColor) INTERSECTED.originalColor = INTERSECTED.material.color.clone();
+        INTERSECTED.targetColor = new THREE.Color(hoverColorMap[INTERSECTED.name] || 0xffff00);
       }
     } else {
       if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
@@ -216,8 +182,7 @@ const loader = new THREE.GLTFLoader();
   window.addEventListener("mousemove", onMouseMove);
   window.addEventListener("click", onClick);
 
-  // --- RESIZE HANDLER ---
-  window.addEventListener("resize", function () {
+  window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -226,25 +191,27 @@ const loader = new THREE.GLTFLoader();
   // --- ANIMATE LOOP ---
   function animate() {
     requestAnimationFrame(animate);
-
     controls.update();
 
-    // --- VORTEX MOTION ---
-    clickableObjects.forEach((mesh) => {
-      const vortex = mesh.userData.vortex;
-      if (vortex) {
-        vortex.angle += vortex.speed;
-        mesh.position.x = Math.cos(vortex.angle) * vortex.radius;
-        mesh.position.z = Math.sin(vortex.angle) * vortex.radius;
+    // Center meshes fixed at origin (optional slow rotation)
+    centerMeshes.forEach(mesh => mesh.rotation.y += 0.001);
 
-        mesh.position.y += vortex.ySpeed;
-        if (mesh.position.y > 5) mesh.position.y = -5; // loop vertically
+    // Tunnel meshes forward motion
+    tunnelMeshes.forEach(mesh => {
+      const t = mesh.userData.tunnel;
+      mesh.position.z += t.speed;
+      if (mesh.position.z > 5) {
+        mesh.position.z = -50 + Math.random() * 10;
+        mesh.position.x = (Math.random() - 0.5) * 10;
+        mesh.position.y = (Math.random() - 0.5) * 10;
+        mesh.scale.setScalar(0.5 + Math.random());
       }
+      mesh.rotation.x += 0.001;
+      mesh.rotation.y += 0.002;
     });
 
-    // --- HOVER COLOR LERP ---
-    hoverableObjects.forEach((obj) => {
-      if (obj.material && obj.material.color && obj.targetColor) {
+    hoverableObjects.forEach(obj => {
+      if (obj.material?.color && obj.targetColor) {
         obj.material.color.lerp(obj.targetColor, 0.1);
       }
     });
@@ -253,6 +220,7 @@ const loader = new THREE.GLTFLoader();
   }
   animate();
 </script>
+
 
 <img class="clouds-overlay" src="cloudtop.gif">
 
