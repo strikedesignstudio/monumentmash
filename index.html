@@ -95,7 +95,6 @@
   // --- GLOBAL VARIABLES ---
   const clickableObjects = [];
   const hoverableObjects = [];
-  const centerMeshes = [];
   const tunnelMeshes = [];
   let INTERSECTED;
 
@@ -156,48 +155,70 @@
 
     // --- Populate clickable + hover + tunnel meshes (ALL as planets) ---
     let meshIndex = 0;
+    const audioMeshNames = Object.keys(audioSegments);
+    
     model.traverse((child) => {
       if (child.isMesh && !meshesToRemove.includes(child.name)) {
+        console.log('Found mesh:', child.name);
+        
         clickableObjects.push(child);
+        
+        // Make material visible and set up
+        if (!child.material) {
+          child.material = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff,
+            metalness: 0.3,
+            roughness: 0.7
+          });
+        }
         child.material.transparent = true;
+        child.material.opacity = 1.0;
+        child.material.side = THREE.DoubleSide;
+        child.visible = true;
 
         // ALL meshes become tunnel/planet objects
         tunnelMeshes.push(child);
         
         // Random distribution in 3D tunnel space
         const angle = Math.random() * Math.PI * 2;
-        const radius = 3 + Math.random() * 7; // Distance from center
+        const radius = 3 + Math.random() * 7;
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
-        const z = -Math.random() * 100; // Spread along tunnel depth
+        const z = -Math.random() * 100;
         
         child.userData.tunnel = {
           x: x,
           y: y,
           z: z,
-          speed: 0.15 + Math.random() * 0.2, // Faster forward motion
+          speed: 0.15 + Math.random() * 0.2,
           rotationSpeedX: (Math.random() - 0.5) * 0.02,
           rotationSpeedY: (Math.random() - 0.5) * 0.02,
           rotationSpeedZ: (Math.random() - 0.5) * 0.02,
-          scale: 0.3 + Math.random() * 0.7, // Varying sizes
+          scale: 0.3 + Math.random() * 0.7,
           orbitAngle: angle,
           orbitRadius: radius,
-          orbitSpeed: (Math.random() - 0.5) * 0.005 // Slow orbital rotation
+          orbitSpeed: (Math.random() - 0.5) * 0.005
         };
         
         child.position.set(x, y, z);
         child.scale.setScalar(child.userData.tunnel.scale);
 
-        if (hoverColorMap[child.name]) hoverableObjects.push(child);
+        // Add to hoverable if it has audio
+        if (audioMeshNames.includes(child.name)) {
+          hoverableObjects.push(child);
+          console.log('Audio mesh found:', child.name);
+        }
+        
         meshIndex++;
       }
     });
 
     scene.add(model);
-    console.log('Model loaded successfully, meshes:', meshIndex);
+    console.log('Model loaded successfully, total meshes:', meshIndex);
+    console.log('Clickable meshes:', clickableObjects.length);
+    console.log('Hoverable (audio) meshes:', hoverableObjects.length);
   }, undefined, function(error) {
     console.log('Model failed to load:', error);
-    // Add a test cube so you can see something
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     const cube = new THREE.Mesh(geometry, material);
@@ -288,10 +309,8 @@
       
       // Reset when mesh passes camera
       if (mesh.position.z > 10) {
-        // Respawn far back in the tunnel
         mesh.position.z = -100 - Math.random() * 50;
         
-        // New random orbital position
         const newAngle = Math.random() * Math.PI * 2;
         const newRadius = 3 + Math.random() * 7;
         t.orbitAngle = newAngle;
@@ -299,7 +318,6 @@
         t.x = Math.cos(newAngle) * newRadius;
         t.y = Math.sin(newAngle) * newRadius;
         
-        // Vary scale for depth perception
         mesh.scale.setScalar(0.3 + Math.random() * 0.7);
       }
       
