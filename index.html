@@ -62,8 +62,8 @@
 <img class="clouds-overlay" src="cloudtop.gif" onerror="this.style.display='none'">
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
     // --- SCENE SETUP ---
@@ -293,6 +293,27 @@
     }
     animate();
   </script>
+<script>
+const space = document.querySelector('.space-bg');
+const numStars = 200;
+
+for (let i = 0; i < numStars; i++) {
+  const star = document.createElement('div');
+  star.classList.add('star');
+
+  star.style.top = `${Math.random() * 100}%`;
+  star.style.left = `${Math.random() * 100}%`;
+
+  const size = Math.random() * 2 + 1;
+  star.style.width = `${size}px`;
+  star.style.height = `${size}px`;
+
+  star.style.animationDelay = `${Math.random() * 5}s`;
+  star.style.animationDuration = `${2 + Math.random() * 3}s`;
+
+  space.appendChild(star);
+}
+</script>
 
 </body>
 </html>
