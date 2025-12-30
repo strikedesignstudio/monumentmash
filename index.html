@@ -70,8 +70,6 @@
    SCENE SETUP
 ========================= */
 const scene = new THREE.Scene();
-scene.background = null;
-
 const sceneLayer = document.getElementById('scene-layer');
 
 const camera = new THREE.PerspectiveCamera(
@@ -82,15 +80,9 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 0, 5);
 
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  alpha: true,
-  premultipliedAlpha: false
-});
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.setClearColor(0x000000, 0);
 sceneLayer.appendChild(renderer.domElement);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -115,6 +107,7 @@ const planetNames = [
   "Hilmi","Anon","Henry","Sabir","Shemi","Hannah",
   "Evodie","Marvin","Jessica","Rachid","Jermaine","Dominic"
 ];
+
 const planets = [];
 
 /* =========================
@@ -189,25 +182,18 @@ loader.load("model/modelfull2.gltf", gltf => {
 
     clickableObjects.push(child);
     child.material.transparent = true;
-    child.material.opacity = 1;
 
     if (planetNames.includes(child.name)) {
       hoverableObjects.push(child);
 
-      const angle = Math.random() * Math.PI * 2;
-      const radius = 1.5 + Math.random() * 3;
-      const height = (Math.random() - 0.5) * 1.5;
-      const drift = 0.03 + Math.random() * 0.04;
-      const speed = 0.002 + Math.random() * 0.003;
-
-      // set initial position in front of camera
-      child.position.set(
-        Math.cos(angle) * radius,
-        height,
-        -10 - Math.random() * 10
-      );
-
-      planets.push({ mesh: child, angle, radius, height, speed, drift });
+      planets.push({
+        mesh: child,
+        angle: Math.random() * Math.PI * 2,
+        radius: 2 + Math.random() * 5,
+        height: (Math.random() - 0.5) * 2,
+        speed: 0.002 + Math.random() * 0.003,
+        drift: 0.03 + Math.random() * 0.04
+      });
     }
   });
 
@@ -274,53 +260,13 @@ window.addEventListener("resize", () => {
 });
 
 /* =========================
-   STARFIELD
-========================= */
-const space = document.querySelector('.space-bg');
-const numStars = 200;
-const stars = [];
-
-for (let i = 0; i < numStars; i++) {
-  const star = document.createElement('div');
-  star.classList.add('star');
-  const depth = Math.random();
-  star.dataset.depth = depth;
-
-  star.style.top = `${Math.random() * 100}%`;
-  star.style.left = `${Math.random() * 100}%`;
-  const size = 1 + depth * 2;
-  star.style.width = `${size}px`;
-  star.style.height = `${size}px`;
-  star.style.opacity = 0.3 + depth * 0.7;
-
-  space.appendChild(star);
-  stars.push(star);
-}
-
-function updateStars(vortexSpeed = 0.04) {
-  stars.forEach(star => {
-    const depth = parseFloat(star.dataset.depth);
-    let top = parseFloat(star.style.top);
-
-    top += vortexSpeed * depth * 0.6;
-
-    if (top > 100) {
-      top = -2;
-      star.style.left = `${Math.random() * 100}%`;
-    }
-
-    star.style.top = `${top}%`;
-  });
-}
-
-/* =========================
    ANIMATION LOOP
 ========================= */
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
 
-  // PLANET VORTEX MOTION + DEPTH-BASED FADE
+  // VORTEX MOTION
   planets.forEach(p => {
     p.angle += p.speed;
 
@@ -328,37 +274,26 @@ function animate() {
     p.mesh.position.y = p.height + Math.sin(p.angle * 0.5);
     p.mesh.position.z += p.drift;
 
-    // Reset if passed camera
     if (p.mesh.position.z > camera.position.z + 1) {
       p.mesh.position.z = -25;
-      p.radius = 1.5 + Math.random() * 3;
-      p.height = (Math.random() - 0.5) * 1.5;
+      p.radius = 2 + Math.random() * 5;
+      p.height = (Math.random() - 0.5) * 2;
     }
 
-    // Rotation
     p.mesh.rotation.y += 0.004;
-
-    // Depth fade + slight scale
-    const depth = Math.abs(p.mesh.position.z);
-    const blurAmount = THREE.MathUtils.clamp((depth - 5) / 20, 0, 1);
-    p.mesh.material.opacity = THREE.MathUtils.lerp(1, 0.15, blurAmount);
-    const scale = THREE.MathUtils.lerp(1, 0.85, blurAmount);
-    p.mesh.scale.setScalar(scale * 0.026);
   });
 
-  // Hover color lerp
+  // HOVER COLOR LERP
   hoverableObjects.forEach(o => {
     if (o.targetColor) o.material.color.lerp(o.targetColor, 0.1);
   });
-
-  // Update starfield
-  updateStars(0.04);
 
   renderer.render(scene, camera);
 }
 
 animate();
 </script>
+
 
 <script>
 const space2 = document.querySelector('.space-bg');
