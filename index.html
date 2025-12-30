@@ -66,259 +66,300 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
  <script>
-  // --- SCENE SETUP ---
-  const scene = new THREE.Scene();
+/* =========================
+   SCENE SETUP
+========================= */
+const scene = new THREE.Scene();
+scene.background = null;
 
-  // --- CONTAINER & RENDERER ---
-  const container = document.getElementById('scene-layer');
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setClearColor(0x000000, 0); // transparent background
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  container.appendChild(renderer.domElement);
+const sceneLayer = document.getElementById('scene-layer');
 
-  // --- CAMERA ---
-  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.01, 1000);
-  camera.position.set(0, 0, 5);
+const camera = new THREE.PerspectiveCamera(
+  70,
+  sceneLayer.clientWidth / sceneLayer.clientHeight,
+  0.01,
+  1000
+);
+camera.position.set(0, 0, 5);
 
-  // --- CONTROLS ---
-  const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  alpha: true,
+  premultipliedAlpha: false
+});
+renderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.setClearColor(0x000000, 0);
+sceneLayer.appendChild(renderer.domElement);
 
-  // --- LIGHTS ---
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-  hemiLight.position.set(0, 2, 0);
-  scene.add(hemiLight);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-  // --- GLOBAL VARIABLES ---
-  const clickableObjects = [];
-  const hoverableObjects = [];
-  let INTERSECTED;
-  const loadingText = document.getElementById('loading');
+/* =========================
+   LIGHTS
+========================= */
+scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 1.2));
 
-  // --- AUDIO SETUP ---
-  const listener = new THREE.AudioListener();
-  camera.add(listener);
-  const audioLoader = new THREE.AudioLoader();
-  let audioBufferShared = null;
-  let currentSource = null;
+/* =========================
+   GLOBALS
+========================= */
+const clickableObjects = [];
+const hoverableObjects = [];
+let INTERSECTED = null;
 
-  // --- AUDIO SEGMENTS ---
-  const audioSegments = {
-    "Hilmi": 6, "Anon": 66, "Henry": 85.2, "Sabir": 120.6, "Shemi": 137.4,
-    "Hannah": 187.2, "Evodie": 240, "Marvin": 270, "Jessica": 327,
-    "Rachid": 444.6, "Jermaine": 557.4, "Dominic": 614.4
-  };
+/* =========================
+   PLANET / VORTEX SETUP
+========================= */
+const planetNames = [
+  "Hilmi","Anon","Henry","Sabir","Shemi","Hannah",
+  "Evodie","Marvin","Jessica","Rachid","Jermaine","Dominic"
+];
+const planets = [];
 
-  // --- HOVER COLORS ---
-  const hoverColorMap = {
-    "Hilmi": 0xff0000, "Anon": 0x00ff00, "Henry": 0x0000ff, "Sabir": 0xffff00,
-    "Shemi": 0xff00ff, "Hannah": 0x00ffff, "Evodie": 0xff8800, "Marvin": 0x88ff00,
-    "Jessica": 0x0088ff, "Rachid": 0x8800ff, "Jermaine": 0xff0088, "Dominic": 0x00ff88
-  };
+/* =========================
+   AUDIO
+========================= */
+const listener = new THREE.AudioListener();
+camera.add(listener);
 
-  // --- LOAD AUDIO ---
-  audioLoader.load('audio/monmashcomp.mp3', function (buffer) {
-    audioBufferShared = buffer;
-  });
+const audioLoader = new THREE.AudioLoader();
+let audioBufferShared = null;
+let currentSource = null;
 
-  // --- GLTF LOADER ---
-  const loader = new THREE.GLTFLoader();
+const audioSegments = {
+  Hilmi: 6,
+  Anon: 66,
+  Henry: 85.2,
+  Sabir: 120.6,
+  Shemi: 137.4,
+  Hannah: 187.2,
+  Evodie: 240,
+  Marvin: 270,
+  Jessica: 327,
+  Rachid: 444.6,
+  Jermaine: 557.4,
+  Dominic: 614.4
+};
 
-  const vortexLabels = ["Hilmi","Anon","Henry","Sabir","Shemi","Hannah","Evodie","Marvin","Jessica","Rachid","Jermaine","Dominic"];
-  const vortexMeshes = [];
-  const vortexParams = [];
-
-  loader.load(
-    'model/modelfull2.gltf',
-    function (gltf) {
-      const model = gltf.scene;
-      model.scale.set(0.026, 0.026, 0.026);
-      model.position.y -= 2.5;
-
-      const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
-      const toRemove = [];
-
-      model.traverse((child) => {
-        if (meshesToRemove.includes(child.name)) toRemove.push(child);
-      });
-
-      toRemove.forEach((mesh) => {
-        mesh.traverse((descendant) => {
-          if (descendant.isMesh) {
-            descendant.geometry.dispose();
-            if (descendant.material) {
-              if (Array.isArray(descendant.material)) {
-                descendant.material.forEach((m) => m.dispose());
-              } else {
-                descendant.material.dispose();
-              }
-            }
-          }
-        });
-        if (mesh.parent) mesh.parent.remove(mesh);
-      });
-
-      // --- Populate clickable, hoverable, and vortex meshes ---
-      model.traverse((child) => {
-        if (child.isMesh && !meshesToRemove.includes(child.name)) {
-          clickableObjects.push(child);
-          child.material.transparent = true;
-
-          if (Object.keys(hoverColorMap).includes(child.name)) {
-            hoverableObjects.push(child);
-          }
-
-          if (vortexLabels.includes(child.name)) {
-  vortexMeshes.push(child);
-
-  // Start near the center
-  const angle = Math.random() * Math.PI * 2;
-  const distance = 0; // start exactly at center
-  const speed = 0.01 + Math.random() * 0.01; // outward speed
-
-  vortexParams.push({
-    angle,
-    radius: distance,
-    speed,
-    baseScale: child.scale.x
-  });
-
-  // Start small at center
-  const initialScale = child.scale.x * 0.3;
-  child.scale.set(initialScale, initialScale, initialScale);
-  child.position.set(0, 0, 0);
-}
-        }
-      });
-
-      scene.add(model);
-
-      if (loadingText) loadingText.remove();
-    },
-    function (xhr) {
-      if (xhr.total && loadingText) {
-        loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
-      }
-    },
-    function (error) {
-      console.error('GLTF load error:', error);
-    }
-  );
-
-  // --- RAYCASTING ---
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-
-  // --- PLAY AUDIO SEGMENTS ---
-  function playFrom(startTime) {
-    if (!audioBufferShared) return;
-    if (currentSource) currentSource.stop();
-
-    const audioCtx = listener.context;
-    const source = audioCtx.createBufferSource();
-    source.buffer = audioBufferShared;
-    source.connect(listener.getInput());
-    source.start(0, startTime);
-    currentSource = source;
-  }
-
-  // --- CLICK EVENTS ---
-  function onClick(event) {
-    mouse.x = (event.clientX / container.clientWidth) * 2 - 1;
-    mouse.y = -(event.clientY / container.clientHeight) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
-
-    const intersects = raycaster.intersectObjects(clickableObjects, true);
-    if (intersects.length > 0) {
-      const clicked = intersects[0].object;
-
-      if (clicked.material && clicked.material.opacity !== undefined) {
-        clicked.material.opacity = 0.6;
-        setTimeout(() => (clicked.material.opacity = 1), 300);
-      }
-
-      const segmentStart = audioSegments[clicked.name];
-      if (segmentStart !== undefined) playFrom(segmentStart);
-    }
-  }
-
-  // --- HOVER EVENTS ---
-  function onMouseMove(event) {
-    mouse.x = (event.clientX / container.clientWidth) * 2 - 1;
-    mouse.y = -(event.clientY / container.clientHeight) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(hoverableObjects, true);
-
-    if (intersects.length > 0) {
-      const hovered = intersects[0].object;
-
-      if (INTERSECTED !== hovered) {
-        if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
-
-        INTERSECTED = hovered;
-        if (!INTERSECTED.originalColor)
-          INTERSECTED.originalColor = INTERSECTED.material.color.clone();
-
-        const colorHex = hoverColorMap[INTERSECTED.name] || 0xffff00;
-        INTERSECTED.targetColor = new THREE.Color(colorHex);
-      }
-    } else {
-      if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
-      INTERSECTED = null;
-    }
-  }
-
-  window.addEventListener("mousemove", onMouseMove);
-  window.addEventListener("click", onClick);
-
-  // --- RESIZE HANDLER ---
-  window.addEventListener("resize", function () {
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-  });
-
-  // --- ANIMATE LOOP ---
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-
-    hoverableObjects.forEach((obj) => {
-      if (obj.material && obj.material.color && obj.targetColor) {
-        obj.material.color.lerp(obj.targetColor, 0.1);
-      }
-    });
-
-    // Vortex animation
-    vortexMeshes.forEach((mesh, i) => {
-  const params = vortexParams[i];
-
-  // Move outward
-  params.radius += params.speed;
-
-  // Update position
-  mesh.position.x = Math.cos(params.angle) * params.radius;
-  mesh.position.y = Math.sin(params.angle) * params.radius;
-
-  // Scale grows slightly with distance, but clamp to max
-  const maxScale = params.scale * 2;   // max 2x original
-  const scaleFactor = params.scale * (1 + params.radius * 0.5); // smaller growth
-  const finalScale = Math.min(scaleFactor, maxScale);
-  mesh.scale.set(finalScale, finalScale, finalScale);
-
-  // Reset if too far
-  if (params.radius > 2.5) {
-    params.radius = 0;
-    params.angle = Math.random() * Math.PI * 2;
-  }
+audioLoader.load("audio/monmashcomp.mp3", buffer => {
+  audioBufferShared = buffer;
 });
 
-    renderer.render(scene, camera);
+function playFrom(startTime) {
+  if (!audioBufferShared) return;
+  if (currentSource) currentSource.stop();
+
+  const source = listener.context.createBufferSource();
+  source.buffer = audioBufferShared;
+  source.connect(listener.getInput());
+  source.start(0, startTime);
+  currentSource = source;
+}
+
+/* =========================
+   HOVER COLORS
+========================= */
+const hoverColorMap = {
+  Hilmi: 0xff0000,
+  Anon: 0x00ff00,
+  Henry: 0x0000ff,
+  Sabir: 0xffff00,
+  Shemi: 0xff00ff,
+  Hannah: 0x00ffff,
+  Evodie: 0xff8800,
+  Marvin: 0x88ff00,
+  Jessica: 0x0088ff,
+  Rachid: 0x8800ff,
+  Jermaine: 0xff0088,
+  Dominic: 0x00ff88
+};
+
+/* =========================
+   LOAD MODEL
+========================= */
+const loader = new THREE.GLTFLoader();
+loader.load("model/modelfull2.gltf", gltf => {
+  const model = gltf.scene;
+  model.scale.set(0.026, 0.026, 0.026);
+  model.position.y -= 2.5;
+
+  model.traverse(child => {
+    if (!child.isMesh) return;
+
+    clickableObjects.push(child);
+    child.material.transparent = true;
+    child.material.opacity = 1;
+
+    if (planetNames.includes(child.name)) {
+      hoverableObjects.push(child);
+
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 1.5 + Math.random() * 3;
+      const height = (Math.random() - 0.5) * 1.5;
+      const drift = 0.03 + Math.random() * 0.04;
+      const speed = 0.002 + Math.random() * 0.003;
+
+      // set initial position in front of camera
+      child.position.set(
+        Math.cos(angle) * radius,
+        height,
+        -10 - Math.random() * 10
+      );
+
+      planets.push({ mesh: child, angle, radius, height, speed, drift });
+    }
+  });
+
+  scene.add(model);
+});
+
+/* =========================
+   RAYCASTING
+========================= */
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+function onClick(e) {
+  const r = sceneLayer.getBoundingClientRect();
+  mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+  mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(clickableObjects, true);
+
+  if (hits.length) {
+    const obj = hits[0].object;
+    obj.material.opacity = 0.6;
+    setTimeout(() => obj.material.opacity = 1, 300);
+
+    if (audioSegments[obj.name] !== undefined) {
+      playFrom(audioSegments[obj.name]);
+    }
   }
-  animate();
+}
+
+function onMove(e) {
+  const r = sceneLayer.getBoundingClientRect();
+  mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+  mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(hoverableObjects, true);
+
+  if (hits.length) {
+    const obj = hits[0].object;
+    if (INTERSECTED !== obj) {
+      if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
+      INTERSECTED = obj;
+      if (!obj.originalColor) obj.originalColor = obj.material.color.clone();
+      obj.targetColor = new THREE.Color(hoverColorMap[obj.name]);
+    }
+  } else {
+    if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
+    INTERSECTED = null;
+  }
+}
+
+sceneLayer.addEventListener("click", onClick);
+sceneLayer.addEventListener("mousemove", onMove);
+
+/* =========================
+   RESIZE
+========================= */
+window.addEventListener("resize", () => {
+  camera.aspect = sceneLayer.clientWidth / sceneLayer.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
+});
+
+/* =========================
+   STARFIELD
+========================= */
+const space = document.querySelector('.space-bg');
+const numStars = 200;
+const stars = [];
+
+for (let i = 0; i < numStars; i++) {
+  const star = document.createElement('div');
+  star.classList.add('star');
+  const depth = Math.random();
+  star.dataset.depth = depth;
+
+  star.style.top = `${Math.random() * 100}%`;
+  star.style.left = `${Math.random() * 100}%`;
+  const size = 1 + depth * 2;
+  star.style.width = `${size}px`;
+  star.style.height = `${size}px`;
+  star.style.opacity = 0.3 + depth * 0.7;
+
+  space.appendChild(star);
+  stars.push(star);
+}
+
+function updateStars(vortexSpeed = 0.04) {
+  stars.forEach(star => {
+    const depth = parseFloat(star.dataset.depth);
+    let top = parseFloat(star.style.top);
+
+    top += vortexSpeed * depth * 0.6;
+
+    if (top > 100) {
+      top = -2;
+      star.style.left = `${Math.random() * 100}%`;
+    }
+
+    star.style.top = `${top}%`;
+  });
+}
+
+/* =========================
+   ANIMATION LOOP
+========================= */
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  // PLANET VORTEX MOTION + DEPTH-BASED FADE
+  planets.forEach(p => {
+    p.angle += p.speed;
+
+    p.mesh.position.x = Math.cos(p.angle) * p.radius;
+    p.mesh.position.y = p.height + Math.sin(p.angle * 0.5);
+    p.mesh.position.z += p.drift;
+
+    // Reset if passed camera
+    if (p.mesh.position.z > camera.position.z + 1) {
+      p.mesh.position.z = -25;
+      p.radius = 1.5 + Math.random() * 3;
+      p.height = (Math.random() - 0.5) * 1.5;
+    }
+
+    // Rotation
+    p.mesh.rotation.y += 0.004;
+
+    // Depth fade + slight scale
+    const depth = Math.abs(p.mesh.position.z);
+    const blurAmount = THREE.MathUtils.clamp((depth - 5) / 20, 0, 1);
+    p.mesh.material.opacity = THREE.MathUtils.lerp(1, 0.15, blurAmount);
+    const scale = THREE.MathUtils.lerp(1, 0.85, blurAmount);
+    p.mesh.scale.setScalar(scale * 0.026);
+  });
+
+  // Hover color lerp
+  hoverableObjects.forEach(o => {
+    if (o.targetColor) o.material.color.lerp(o.targetColor, 0.1);
+  });
+
+  // Update starfield
+  updateStars(0.04);
+
+  renderer.render(scene, camera);
+}
+
+animate();
 </script>
+
 <script>
 const space = document.querySelector('.space-bg');
 const numStars = 200;
