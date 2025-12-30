@@ -288,19 +288,27 @@
 
     // Vortex animation
     vortexMeshes.forEach((mesh, i) => {
-      const params = vortexParams[i];
-      params.radius += params.speed;
-      mesh.position.x = Math.cos(params.angle) * params.radius;
-      mesh.position.y = Math.sin(params.angle) * params.radius;
-      mesh.scale.set(params.scale * (1 + params.radius * 2),
-                     params.scale * (1 + params.radius * 2),
-                     params.scale * (1 + params.radius * 2));
+  const params = vortexParams[i];
 
-      if (params.radius > 2.5) {
-        params.radius = 0;
-        params.angle = Math.random() * Math.PI * 2;
-      }
-    });
+  // Move outward
+  params.radius += params.speed;
+
+  // Update position
+  mesh.position.x = Math.cos(params.angle) * params.radius;
+  mesh.position.y = Math.sin(params.angle) * params.radius;
+
+  // Scale grows slightly with distance, but clamp to max
+  const maxScale = params.scale * 2;   // max 2x original
+  const scaleFactor = params.scale * (1 + params.radius * 0.5); // smaller growth
+  const finalScale = Math.min(scaleFactor, maxScale);
+  mesh.scale.set(finalScale, finalScale, finalScale);
+
+  // Reset if too far
+  if (params.radius > 2.5) {
+    params.radius = 0;
+    params.angle = Math.random() * Math.PI * 2;
+  }
+});
 
     renderer.render(scene, camera);
   }
