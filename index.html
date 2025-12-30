@@ -185,27 +185,46 @@ loader.load("model/modelfull2.gltf", gltf => {
   model.scale.set(0.026, 0.026, 0.026);
   model.position.y -= 2.5;
 
-  model.traverse(child => {
-    if (!child.isMesh) return;
+ const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
+      const toRemove = [];
 
-    clickableObjects.push(child);
-    child.material.transparent = true;
-
-    if (planetNames.includes(child.name)) {
-      hoverableObjects.push(child);
-
-      planets.push({
-        mesh: child,
-        angle: Math.random() * Math.PI * 2,
-        radius: 2 + Math.random() * 5,
-        height: (Math.random() - 0.5) * 2,
-        speed: 0.002 + Math.random() * 0.003,
-        drift: 0.03 + Math.random() * 0.04
+      // --- Collect unwanted meshes (including their children) ---
+      model.traverse((child) => {
+        if (meshesToRemove.includes(child.name)) {
+          toRemove.push(child);
+        }
       });
-    }
-  });
 
-  scene.add(model);
+      // --- Remove unwanted meshes & descendants safely ---
+      toRemove.forEach((mesh) => {
+        mesh.traverse((descendant) => {
+          if (descendant.isMesh) {
+            descendant.geometry.dispose();
+            if (descendant.material) {
+              if (Array.isArray(descendant.material)) {
+                descendant.material.forEach((m) => m.dispose());
+              } else {
+                descendant.material.dispose();
+              }
+            }
+          }
+        });
+        if (mesh.parent) mesh.parent.remove(mesh);
+      });
+
+      // --- Populate clickable & hoverable objects ---
+      model.traverse((child) => {
+        if (child.isMesh && !meshesToRemove.includes(child.name)) {
+          clickableObjects.push(child);
+          child.material.transparent = true;
+          if (Object.keys(hoverColorMap).includes(child.name)) {
+            hoverableObjects.push(child);
+          }
+        }
+      });
+
+      scene.add(model);
+
 });
 
 /* =========================
