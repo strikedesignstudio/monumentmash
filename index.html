@@ -66,259 +66,127 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
  <script>
-/* =========================
-   SCENE SETUP
-========================= */
-const scene = new THREE.Scene();
-scene.background = null;
-const sceneLayer = document.getElementById('scene-layer');
-
-const camera = new THREE.PerspectiveCamera(
-  70,
-  sceneLayer.clientWidth / sceneLayer.clientHeight,
-  0.01,
-  1000
-);
-camera.position.set(0, 0, 5);
-
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  alpha: true,
-  premultipliedAlpha: false
-});
-renderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+// --- RENDERER TRANSPARENT ---
+const container = document.getElementById('scene-layer');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0); // transparent background
+renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.outputEncoding = THREE.sRGBEncoding;
-// IMPORTANT: transparent clear
-renderer.setClearColor(0x000000, 0);
-sceneLayer.appendChild(renderer.domElement);
+container.appendChild(renderer.domElement);
 
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-
-/* =========================
-   LIGHTS
-========================= */
-scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 1.2));
-
-/* =========================
-   GLOBALS
-========================= */
-const clickableObjects = [];
-const hoverableObjects = [];
-let INTERSECTED = null;
-
-/* =========================
-   PLANET / VORTEX SETUP
-========================= */
-const planetNames = [
-  "Hilmi","Anon","Henry","Sabir","Shemi","Hannah",
-  "Evodie","Marvin","Jessica","Rachid","Jermaine","Dominic"
-];
-
-const planets = [];
-
-/* =========================
-   AUDIO
-========================= */
-const listener = new THREE.AudioListener();
-camera.add(listener);
-
-const audioLoader = new THREE.AudioLoader();
-let audioBufferShared = null;
-let currentSource = null;
-
-const audioSegments = {
-  Hilmi: 6,
-  Anon: 66,
-  Henry: 85.2,
-  Sabir: 120.6,
-  Shemi: 137.4,
-  Hannah: 187.2,
-  Evodie: 240,
-  Marvin: 270,
-  Jessica: 327,
-  Rachid: 444.6,
-  Jermaine: 557.4,
-  Dominic: 614.4
-};
-
-audioLoader.load("audio/monmashcomp.mp3", buffer => {
-  audioBufferShared = buffer;
+// --- RESIZE HANDLER ---
+window.addEventListener("resize", function () {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
 });
 
-function playFrom(startTime) {
-  if (!audioBufferShared) return;
-  if (currentSource) currentSource.stop();
+// --- PLANET-LIKE VORTEX SETUP ---
+const vortexMeshes = []; // meshes that will fly through
+const vortexLabels = ["Hilmi","Anon","Henry","Sabir","Shemi","Hannah","Evodie","Marvin","Jessica","Rachid","Jermaine","Dominic"];
+const vortexParams = []; // store position/velocity/scale for each mesh
 
-  const source = listener.context.createBufferSource();
-  source.buffer = audioBufferShared;
-  source.connect(listener.getInput());
-  source.start(0, startTime);
-  currentSource = source;
-}
-
-/* =========================
-   HOVER COLORS
-========================= */
-const hoverColorMap = {
-  Hilmi: 0xff0000,
-  Anon: 0x00ff00,
-  Henry: 0x0000ff,
-  Sabir: 0xffff00,
-  Shemi: 0xff00ff,
-  Hannah: 0x00ffff,
-  Evodie: 0xff8800,
-  Marvin: 0x88ff00,
-  Jessica: 0x0088ff,
-  Rachid: 0x8800ff,
-  Jermaine: 0xff0088,
-  Dominic: 0x00ff88
-};
-
-/* =========================
-   LOAD MODEL
-========================= */
-const loader = new THREE.GLTFLoader();
-loader.load("model/modelfull2.gltf", gltf => {
+// --- AFTER GLTF LOAD ---
+loader.load('model/modelfull2.gltf', function(gltf) {
   const model = gltf.scene;
   model.scale.set(0.026, 0.026, 0.026);
   model.position.y -= 2.5;
 
- const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
-      const toRemove = [];
+  const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
+  const toRemove = [];
 
-      // --- Collect unwanted meshes (including their children) ---
-      model.traverse((child) => {
-        if (meshesToRemove.includes(child.name)) {
-          toRemove.push(child);
-        }
-      });
+  model.traverse((child) => {
+    if (meshesToRemove.includes(child.name)) toRemove.push(child);
+  });
 
-      // --- Remove unwanted meshes & descendants safely ---
-      toRemove.forEach((mesh) => {
-        mesh.traverse((descendant) => {
-          if (descendant.isMesh) {
-            descendant.geometry.dispose();
-            if (descendant.material) {
-              if (Array.isArray(descendant.material)) {
-                descendant.material.forEach((m) => m.dispose());
-              } else {
-                descendant.material.dispose();
-              }
-            }
+  toRemove.forEach((mesh) => {
+    mesh.traverse((descendant) => {
+      if (descendant.isMesh) {
+        descendant.geometry.dispose();
+        if (descendant.material) {
+          if (Array.isArray(descendant.material)) {
+            descendant.material.forEach((m) => m.dispose());
+          } else {
+            descendant.material.dispose();
           }
+        }
+      }
+    });
+    if (mesh.parent) mesh.parent.remove(mesh);
+  });
+
+  // Populate clickable, hoverable, and vortex objects
+  model.traverse((child) => {
+    if (child.isMesh && !meshesToRemove.includes(child.name)) {
+      clickableObjects.push(child);
+      child.material.transparent = true;
+
+      if (Object.keys(hoverColorMap).includes(child.name)) {
+        hoverableObjects.push(child);
+      }
+
+      if (vortexLabels.includes(child.name)) {
+        vortexMeshes.push(child);
+
+        // Initialize position near center with random direction
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 0.5 + 0.1;
+        const speed = 0.002 + Math.random() * 0.004;
+
+        vortexParams.push({
+          angle,
+          radius: distance,
+          speed,
+          scale: child.scale.x
         });
-        if (mesh.parent) mesh.parent.remove(mesh);
-      });
 
-      // --- Populate clickable & hoverable objects ---
-      model.traverse((child) => {
-        if (child.isMesh && !meshesToRemove.includes(child.name)) {
-          clickableObjects.push(child);
-          child.material.transparent = true;
-          if (Object.keys(hoverColorMap).includes(child.name)) {
-            hoverableObjects.push(child);
-          }
-        }
-      });
+        // Start near center
+        child.position.set(Math.cos(angle) * distance, Math.sin(angle) * distance, 0);
+      }
+    }
+  });
 
-      scene.add(model);
-
+  scene.add(model);
+  if (loadingText) loadingText.remove();
 });
 
-/* =========================
-   RAYCASTING
-========================= */
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-function onClick(e) {
-  const r = sceneLayer.getBoundingClientRect();
-  mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
-  mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
-
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(clickableObjects, true);
-
-  if (hits.length) {
-    const obj = hits[0].object;
-    obj.material.opacity = 0.6;
-    setTimeout(() => obj.material.opacity = 1, 300);
-
-    if (audioSegments[obj.name] !== undefined) {
-      playFrom(audioSegments[obj.name]);
-    }
-  }
-}
-
-function onMove(e) {
-  const r = sceneLayer.getBoundingClientRect();
-  mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
-  mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
-
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(hoverableObjects, true);
-
-  if (hits.length) {
-    const obj = hits[0].object;
-    if (INTERSECTED !== obj) {
-      if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
-      INTERSECTED = obj;
-      if (!obj.originalColor) obj.originalColor = obj.material.color.clone();
-      obj.targetColor = new THREE.Color(hoverColorMap[obj.name]);
-    }
-  } else {
-    if (INTERSECTED) INTERSECTED.targetColor = INTERSECTED.originalColor;
-    INTERSECTED = null;
-  }
-}
-
-sceneLayer.addEventListener("click", onClick);
-sceneLayer.addEventListener("mousemove", onMove);
-
-/* =========================
-   RESIZE
-========================= */
-window.addEventListener("resize", () => {
-  camera.aspect = sceneLayer.clientWidth / sceneLayer.clientHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
-});
-
-/* =========================
-   ANIMATION LOOP
-========================= */
+// --- ANIMATE LOOP WITH VORTEX ---
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
 
-  // VORTEX MOTION
-  planets.forEach(p => {
-    p.angle += p.speed;
-
-    p.mesh.position.x = Math.cos(p.angle) * p.radius;
-    p.mesh.position.y = p.height + Math.sin(p.angle * 0.5);
-    p.mesh.position.z += p.drift;
-
-    if (p.mesh.position.z > camera.position.z + 1) {
-      p.mesh.position.z = -25;
-      p.radius = 2 + Math.random() * 5;
-      p.height = (Math.random() - 0.5) * 2;
+  // Update hover colors
+  hoverableObjects.forEach((obj) => {
+    if (obj.material && obj.material.color && obj.targetColor) {
+      obj.material.color.lerp(obj.targetColor, 0.1);
     }
-
-    p.mesh.rotation.y += 0.004;
   });
 
-  // HOVER COLOR LERP
-  hoverableObjects.forEach(o => {
-    if (o.targetColor) o.material.color.lerp(o.targetColor, 0.1);
+  // Update vortex meshes
+  vortexMeshes.forEach((mesh, i) => {
+    const params = vortexParams[i];
+
+    // Move outward
+    params.radius += params.speed;
+
+    // Apply position
+    mesh.position.x = Math.cos(params.angle) * params.radius;
+    mesh.position.y = Math.sin(params.angle) * params.radius;
+
+    // Scale up as it moves outward
+    mesh.scale.set(params.scale * (1 + params.radius * 2), params.scale * (1 + params.radius * 2), params.scale * (1 + params.radius * 2));
+
+    // Reset if too far
+    if (params.radius > 2.5) {
+      params.radius = 0;
+      params.angle = Math.random() * Math.PI * 2;
+    }
   });
 
   renderer.render(scene, camera);
 }
-
 animate();
+
 </script>
 
 <script>
