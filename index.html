@@ -191,12 +191,12 @@
                             child.userData.originalPosition = child.position.clone();
                             
                             // Random position in 3D space (like stars/planets scattered)
-                            child.position.x = Math.random() * 100 - 50;
-                            child.position.y = Math.random() * 100 - 50;
-                            child.position.z = Math.random() * -100 - 20; // Behind camera
+                            child.position.x = (Math.random() - 0.5) * 60;
+                            child.position.y = (Math.random() - 0.5) * 60;
+                            child.position.z = Math.random() * -150 - 50; // Far behind camera
                             
-                            // Warp speed
-                            child.userData.speed = 0.3 + Math.random() * 0.4;
+                            // Much slower warp speed
+                            child.userData.speed = 0.08 + Math.random() * 0.12;
                         }
                     }
                 });
@@ -301,15 +301,15 @@
                 // Move mesh toward camera (increasing Z position)
                 mesh.position.z += mesh.userData.speed;
 
-                // When mesh passes the camera, reset it far back
-                if (mesh.position.z > camera.position.z + 10) {
+                // When mesh passes well beyond the camera and edges, reset it far back
+                if (mesh.position.z > camera.position.z + 50) {
                     // Respawn far behind camera in random position
-                    mesh.position.x = Math.random() * 100 - 50;
-                    mesh.position.y = Math.random() * 100 - 50;
-                    mesh.position.z = Math.random() * -100 - 20;
+                    mesh.position.x = (Math.random() - 0.5) * 60;
+                    mesh.position.y = (Math.random() - 0.5) * 60;
+                    mesh.position.z = Math.random() * -150 - 50;
                     
                     // Vary speed slightly for each reset
-                    mesh.userData.speed = 0.3 + Math.random() * 0.4;
+                    mesh.userData.speed = 0.08 + Math.random() * 0.12;
                 }
             });
 
