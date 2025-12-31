@@ -196,7 +196,7 @@
                             child.position.z = Math.random() * -50 - 100; // Very far behind camera
                             
                             // Much slower warp speed for dramatic float
-                            child.userData.speed = 0.08 + Math.random() * 0.12;
+                            child.userData.speed = 0.1 + Math.random() * 0.3;
                         }
                     }
                 });
@@ -302,14 +302,14 @@
                 mesh.position.z += mesh.userData.speed;
 
                 // When mesh floats well beyond camera and far past edges, reset it
-                if (mesh.position.z > camera.position.z + 100) {
+                if (mesh.position.z > camera.position.z + 500) {
                     // Respawn very far behind camera with wide spread across entire screen
                     mesh.position.x = (Math.random() - 0.5) * 200;
                     mesh.position.y = (Math.random() - 0.5) * 200;
                     mesh.position.z = Math.random() * -50 - 100;
                     
                     // Vary speed slightly for each reset
-                    mesh.userData.speed = 0.08 + Math.random() * 0.12;
+                    mesh.userData.speed = 0.1 + Math.random() * 0.3;
                 }
             });
 
