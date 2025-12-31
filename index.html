@@ -78,7 +78,7 @@
         sceneLayer.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
+        controls.enabled = false; // Disable orbit controls to fix the scene
 
         // --- LIGHTS ---
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
@@ -287,7 +287,6 @@
         // --- ANIMATE LOOP ---
         function animate() {
             requestAnimationFrame(animate);
-            controls.update();
 
             // Hover color transitions
             hoverableObjects.forEach((obj) => {
