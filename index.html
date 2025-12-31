@@ -193,7 +193,7 @@
                             // Random position across entire screen view (much wider spread)
                             child.position.x = (Math.random() - 0.5) * 200;
                             child.position.y = (Math.random() - 0.5) * 200;
-                            child.position.z = Math.random() * -300 - 100; // Very far behind camera
+                            child.position.z = Math.random() * -50 - 100; // Very far behind camera
                             
                             // Much slower warp speed for dramatic float
                             child.userData.speed = 0.08 + Math.random() * 0.12;
@@ -306,7 +306,7 @@
                     // Respawn very far behind camera with wide spread across entire screen
                     mesh.position.x = (Math.random() - 0.5) * 200;
                     mesh.position.y = (Math.random() - 0.5) * 200;
-                    mesh.position.z = Math.random() * -300 - 100;
+                    mesh.position.z = Math.random() * -50 - 100;
                     
                     // Vary speed slightly for each reset
                     mesh.userData.speed = 0.08 + Math.random() * 0.12;
