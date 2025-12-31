@@ -148,7 +148,7 @@
 
                 const model = gltf.scene;
                 model.scale.set(0.026, 0.026, 0.026);
-                model.position.set(0, -2.5, -100); // Push model far into the distance
+                model.position.set(0, -2.5, -10); // Push model far into the distance
 
                 const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
                 const toRemove = [];
@@ -193,10 +193,10 @@
                             // Random position across entire screen view (much wider spread)
                             child.position.x = (Math.random() - 0.5) * 200;
                             child.position.y = (Math.random() - 0.5) * 200;
-                            child.position.z = Math.random() * -300 - 100; // Very far behind camera
+                            child.position.z = Math.random() * -20 - 10; // Very far behind camera
                             
                             // Much slower warp speed for dramatic float
-                            child.userData.speed = 0.08 + Math.random() * 0.12;
+                            child.userData.speed = 0.3 + Math.random() * 0.10;
                         }
                     }
                 });
@@ -301,14 +301,14 @@
                 mesh.position.z += mesh.userData.speed;
 
                 // When mesh floats well beyond camera and far past edges, reset it
-                if (mesh.position.z > camera.position.z + 100) {
+                if (mesh.position.z > camera.position.z + 600) {
                     // Respawn very far behind camera with wide spread across entire screen
                     mesh.position.x = (Math.random() - 0.5) * 200;
                     mesh.position.y = (Math.random() - 0.5) * 200;
-                    mesh.position.z = Math.random() * -300 - 100;
+                    mesh.position.z = Math.random() * -20 - 10;
                     
                     // Vary speed slightly for each reset
-                    mesh.userData.speed = 0.08 + Math.random() * 0.12;
+                    mesh.userData.speed = 0.3 + Math.random() * 0.10;
                 }
             });
 
