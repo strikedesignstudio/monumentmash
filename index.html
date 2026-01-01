@@ -85,6 +85,17 @@
         hemiLight.position.set(0, 2, 0);
         scene.add(hemiLight);
 
+        // Soft rainbow lighting
+        const rainbowLights = [];
+        const rainbowColors = [0xff6b6b, 0xffd93d, 0x6bcf7f, 0x4d96ff, 0xc77dff, 0xff6bda];
+        rainbowColors.forEach((color, i) => {
+            const light = new THREE.PointLight(color, 0.4, 100);
+            const angle = (i / rainbowColors.length) * Math.PI * 2;
+            light.position.set(Math.cos(angle) * 15, Math.sin(angle) * 15, -10);
+            scene.add(light);
+            rainbowLights.push({ light, angle, radius: 15, speed: 0.001 + i * 0.0002 });
+        });
+
         // --- GLOBAL VARIABLES ---
         const clickableObjects = [];
         const hoverableObjects = [];
@@ -193,12 +204,12 @@
                             // Start all meshes in the same center position, far in the distance
                             child.position.x = 0;
                             child.position.y = 0;
-                            child.position.z = -30; // Far behind camera in center
+                            child.position.z = -50; // Even further back for more drift time
                             
-                            // Speed and drift settings - they'll spread out as they move
-                            child.userData.speed = 0.3 + Math.random() * 0.10;
-                            child.userData.driftX = (Math.random() - 0.5) * 0.2; // Lateral drift
-                            child.userData.driftY = Math.random() * 0.15 + 0.05; // Upward bias
+                            // Slower speed and gentler drift
+                            child.userData.speed = 0.15 + Math.random() * 0.05;
+                            child.userData.driftX = (Math.random() - 0.5) * 0.15; // Gentler lateral drift
+                            child.userData.driftY = Math.random() * 0.1 + 0.03; // Gentler upward bias
                         }
                     }
                 });
@@ -311,13 +322,20 @@
                     // Respawn back in center distance
                     mesh.position.x = 0;
                     mesh.position.y = 0;
-                    mesh.position.z = -30;
+                    mesh.position.z = -50;
                     
-                    // Vary speed and drift for each reset
-                    mesh.userData.speed = 0.3 + Math.random() * 0.10;
-                    mesh.userData.driftX = (Math.random() - 0.5) * 0.2;
-                    mesh.userData.driftY = Math.random() * 0.15 + 0.05;
+                    // Vary speed and drift for each reset (slower values)
+                    mesh.userData.speed = 0.15 + Math.random() * 0.05;
+                    mesh.userData.driftX = (Math.random() - 0.5) * 0.15;
+                    mesh.userData.driftY = Math.random() * 0.1 + 0.03;
                 }
+            });
+
+            // Animate rainbow lights in slow orbit
+            rainbowLights.forEach((item) => {
+                item.angle += item.speed;
+                item.light.position.x = Math.cos(item.angle) * item.radius;
+                item.light.position.y = Math.sin(item.angle) * item.radius;
             });
 
             renderer.render(scene, camera);
