@@ -186,21 +186,16 @@
                         if (Object.keys(hoverColorMap).includes(child.name)) {
                             hoverableObjects.push(child);
                             
-                            // Setup for space warp effect - spawn far away
+                            // Setup for space warp effect - all start in center
                             warpingMeshes.push(child);
                             child.userData.originalPosition = child.position.clone();
                             
-                            // Spawn in outer zones avoiding camera center
-                            const angle = Math.random() * Math.PI * 2;
-                            const minRadius = 50; // Keep center clear
-                            const maxRadius = 150;
-                            const radius = minRadius + Math.random() * (maxRadius - minRadius);
+                            // Start all meshes in the same center position, far in the distance
+                            child.position.x = 0;
+                            child.position.y = 0;
+                            child.position.z = -30; // Far behind camera in center
                             
-                            child.position.x = Math.cos(angle) * radius;
-                            child.position.y = Math.sin(angle) * radius;
-                            child.position.z = Math.random() * -20 - 10; // Very far behind camera
-                            
-                            // Speed and drift settings
+                            // Speed and drift settings - they'll spread out as they move
                             child.userData.speed = 0.3 + Math.random() * 0.10;
                             child.userData.driftX = (Math.random() - 0.5) * 0.2; // Lateral drift
                             child.userData.driftY = Math.random() * 0.15 + 0.05; // Upward bias
@@ -311,17 +306,12 @@
                 mesh.position.x += mesh.userData.driftX;
                 mesh.position.y += mesh.userData.driftY;
 
-                // When mesh floats well beyond camera, reset it
+                // When mesh floats well beyond camera, reset it to center
                 if (mesh.position.z > camera.position.z + 600) {
-                    // Respawn in outer zones, avoiding camera center
-                    const angle = Math.random() * Math.PI * 2;
-                    const minRadius = 50;
-                    const maxRadius = 150;
-                    const radius = minRadius + Math.random() * (maxRadius - minRadius);
-                    
-                    mesh.position.x = Math.cos(angle) * radius;
-                    mesh.position.y = Math.sin(angle) * radius;
-                    mesh.position.z = Math.random() * -20 - 10;
+                    // Respawn back in center distance
+                    mesh.position.x = 0;
+                    mesh.position.y = 0;
+                    mesh.position.z = -30;
                     
                     // Vary speed and drift for each reset
                     mesh.userData.speed = 0.3 + Math.random() * 0.10;
