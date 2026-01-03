@@ -204,7 +204,7 @@
                             // Start all meshes in the same center position, far in the distance
                             child.position.x = 0;
                             child.position.y = 0;
-                            child.position.z = -20; // Even further back for more drift time
+                            child.position.z = -100; // Even further back for more drift time
                             
                             // Slower speed and gentler drift
                             child.userData.speed = 0.15 + Math.random() * 0.05;
@@ -322,7 +322,7 @@
                     // Respawn back in center distance
                     mesh.position.x = 0;
                     mesh.position.y = 0;
-                    mesh.position.z = -20;
+                    mesh.position.z = -100;
                     
                     // Vary speed and drift for each reset (slower values)
                     mesh.userData.speed = 0.15 + Math.random() * 0.05;
