@@ -196,13 +196,16 @@ loader.load(
                 
                 if (Object.keys(hoverColorMap).includes(child.name)) {
                     hoverableObjects.push(child);
+
+                    // Make these meshes slightly larger
+                    child.scale.set(1.5, 1.5, 1.5);
                     
                     // Setup for random floating effect around center
                     warpingMeshes.push(child);
                     child.userData.originalPosition = child.position.clone();
                     
                     // Random starting position around the center model - much farther out
-                    const radius = 20 + Math.random() * 80; // Distance from center (to edges of container)
+                    const radius = 200 + Math.random() * 500; // Distance from center (to edges of container)
                     const theta = Math.random() * Math.PI * 2; // Random angle around Y axis
                     const phi = Math.random() * Math.PI; // Random vertical angle
                     
@@ -339,7 +342,7 @@ function animate() {
         const distanceFromCenter = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
         // Keep meshes within a very large spherical boundary (to container edges)
-        const maxRadius = 1000;
+        const maxRadius = 500;
         if (distanceFromCenter > maxRadius) {
             // Bounce back toward center with some randomness
             mesh.userData.velocityX = -mesh.userData.velocityX * 0.8 + (Math.random() - 0.5) * 0.01;
