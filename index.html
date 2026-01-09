@@ -78,7 +78,7 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 sceneLayer.appendChild(renderer.domElement);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enabled = true; // Enable orbit controls
+controls.enabled = false; // Disable orbit controls to fix the scene
 
 // --- LIGHTS ---
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
@@ -188,8 +188,6 @@ loader.load(
             if (mesh.parent) mesh.parent.remove(mesh);
         });
 
-        scene.add(model);
-
         // --- Populate clickable & hoverable objects ---
         model.traverse((child) => {
             if (child.isMesh && !meshesToRemove.includes(child.name)) {
@@ -199,27 +197,21 @@ loader.load(
                 if (Object.keys(hoverColorMap).includes(child.name)) {
                     hoverableObjects.push(child);
                     
-                    // Detach from parent and add to scene for independent positioning
-                    const worldPos = new THREE.Vector3();
-                    child.getWorldPosition(worldPos);
-                    
-                    scene.attach(child); // Move to scene's coordinate system
-                    
-                    // Make these meshes larger (compensate for original model scale)
-                    const baseScale = 0.026 * 1.5;
-                    child.scale.set(baseScale, baseScale, baseScale);
+                    // Make these meshes slightly larger
+                    child.scale.set(1.5, 1.5, 1.5);
                     
                     // Setup for random floating effect around center
                     warpingMeshes.push(child);
+                    child.userData.originalPosition = child.position.clone();
                     
-                    // Random starting position in world space
-                    const radius = 3 + Math.random() * 12;
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.random() * Math.PI;
+                    // Random starting position around the center model - much farther out
+                    const radius = 30 + Math.random() * 120; // Distance from center (increased range)
+                    const theta = Math.random() * Math.PI * 2; // Random angle around Y axis
+                    const phi = Math.random() * Math.PI; // Random vertical angle
                     
                     child.position.x = radius * Math.sin(phi) * Math.cos(theta);
-                    child.position.y = radius * Math.sin(phi) * Math.sin(theta);
-                    child.position.z = radius * Math.cos(phi);
+                    child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
+                    child.position.z = radius * Math.cos(phi) - 5;
                     
                     // Random drift velocities for organic floating
                     child.userData.velocityX = (Math.random() - 0.5) * 0.02;
@@ -235,6 +227,8 @@ loader.load(
                 }
             }
         });
+
+        scene.add(model);
         if (loadingText) loadingText.remove();
     },
     function (xhr) {
@@ -340,15 +334,15 @@ function animate() {
         mesh.rotation.y += mesh.userData.rotationSpeed.y;
         mesh.rotation.z += mesh.userData.rotationSpeed.z;
 
-        // Calculate distance from center point (0, 0, 0) - world space center
-        const centerX = 0, centerY = 0, centerZ = 0;
+        // Calculate distance from center point (0, -2.5, -5)
+        const centerX = 0, centerY = -2.5, centerZ = -5;
         const dx = mesh.position.x - centerX;
         const dy = mesh.position.y - centerY;
         const dz = mesh.position.z - centerZ;
         const distanceFromCenter = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-        // Keep meshes within a visible spherical boundary
-        const maxRadius = 15;
+        // Keep meshes within a very large spherical boundary (to container edges)
+        const maxRadius = 100;
         if (distanceFromCenter > maxRadius) {
             // Bounce back toward center with some randomness
             mesh.userData.velocityX = -mesh.userData.velocityX * 0.8 + (Math.random() - 0.5) * 0.01;
