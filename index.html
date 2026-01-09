@@ -78,7 +78,7 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 sceneLayer.appendChild(renderer.domElement);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enabled = false; // Disable orbit controls to fix the scene
+controls.enabled = true; // Disable orbit controls to fix the scene
 
 // --- LIGHTS ---
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
@@ -196,9 +196,6 @@ loader.load(
                 
                 if (Object.keys(hoverColorMap).includes(child.name)) {
                     hoverableObjects.push(child);
-                    
-                    // Make these meshes slightly larger
-                    child.scale.set(1.5, 1.5, 1.5);
                     
                     // Setup for random floating effect around center
                     warpingMeshes.push(child);
