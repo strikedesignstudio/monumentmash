@@ -339,7 +339,7 @@ function animate() {
         const distanceFromCenter = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
         // Keep meshes within a very large spherical boundary (to container edges)
-        const maxRadius = 500;
+        const maxRadius = 1000;
         if (distanceFromCenter > maxRadius) {
             // Bounce back toward center with some randomness
             mesh.userData.velocityX = -mesh.userData.velocityX * 0.8 + (Math.random() - 0.5) * 0.01;
