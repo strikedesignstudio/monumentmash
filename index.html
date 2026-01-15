@@ -31,7 +31,6 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            filter: blur(0.5px);
         }
         #scene-layer {
             position: fixed;
@@ -51,45 +50,8 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/shaders/CopyShader.js"></script>
     
     <script>
-// --- CHROMATIC ABERRATION SHADER ---
-const ChromaticAberrationShader = {
-    uniforms: {
-        'tDiffuse': { value: null },
-        'offset': { value: new THREE.Vector2(0.007, 0.007) }
-    },
-    vertexShader: `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        uniform sampler2D tDiffuse;
-        uniform vec2 offset;
-        varying vec2 vUv;
-        
-        void main() {
-            vec2 direction = vUv - vec2(0.5);
-            float dist = length(direction);
-            vec2 shift = direction * offset * dist;
-            
-            float r = texture2D(tDiffuse, vUv + shift).r;
-            float g = texture2D(tDiffuse, vUv).g;
-            float b = texture2D(tDiffuse, vUv - shift).b;
-            
-            gl_FragColor = vec4(r, g, b, 1.0);
-        }
-    `
-};
-
 // --- SPACE WARP BACKGROUND ---
 const warpCanvas = document.getElementById('warp-canvas');
 const warpScene = new THREE.Scene();
@@ -100,32 +62,10 @@ const warpRenderer = new THREE.WebGLRenderer({ canvas: warpCanvas, antialias: tr
 warpRenderer.setSize(window.innerWidth, window.innerHeight);
 warpRenderer.setClearColor(0x000000);
 
-// Post-processing setup
-const composer = new THREE.EffectComposer(warpRenderer);
-const renderPass = new THREE.RenderPass(warpScene, warpCamera);
-composer.addPass(renderPass);
-
-// Bloom effect
-const bloomPass = new THREE.UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    1.5,  // strength
-    0.4,  // radius
-    0.85  // threshold
-);
-composer.addPass(bloomPass);
-
-// Chromatic Aberration effect
-const chromaticAberrationPass = new THREE.ShaderPass(ChromaticAberrationShader);
-chromaticAberrationPass.renderToScreen = true;
-composer.addPass(chromaticAberrationPass);
-
 const COUNT = 300;
 const warpMesh = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.05, 8, 8),
-    new THREE.MeshBasicMaterial({ 
-        color: new THREE.Color(2.5, 2.5, 2.5),
-        toneMapped: false 
-    }),
+    new THREE.MeshBasicMaterial({ color: 0xffffff }),
     COUNT
 );
 warpScene.add(warpMesh);
@@ -146,35 +86,26 @@ for (let i = 0; i < COUNT; i++) {
 warpMesh.instanceMatrix.needsUpdate = true;
 
 const clock = new THREE.Clock();
-const CHROMATIC_ABERRATION_OFFSET = 0.007;
 
 function animateWarp() {
     requestAnimationFrame(animateWarp);
     
     const elapsed = clock.getElapsedTime();
-    const delta = clock.getDelta();
-    
-    // Exponential decay for deceleration effect
-    const velocity = Math.max(delta, Math.pow(0.5, elapsed));
-    
-    // Update chromatic aberration based on velocity (fades as speed decreases)
-    const chromaticStrength = Math.max(0, Math.pow(0.5, elapsed) * CHROMATIC_ABERRATION_OFFSET);
-    chromaticAberrationPass.uniforms['offset'].value.x = chromaticStrength;
-    chromaticAberrationPass.uniforms['offset'].value.y = chromaticStrength;
+    const velocity = Math.max(0.5, Math.pow(0.5, elapsed));
     
     for (let i = 0; i < COUNT; i++) {
         warpMesh.getMatrixAt(i, tempMatrix);
         tempPos.setFromMatrixPosition(tempMatrix);
         
-        // Update position with deceleration
+        // Update position
         if (tempPos.z > 10) {
             tempPos.z = -10;
         } else {
-            tempPos.z += velocity;
+            tempPos.z += velocity * 0.1;
         }
         
-        // Update scale for warp effect (stretching decreases as speed decreases)
-        const scaleZ = Math.max(1, Math.pow(0.5, elapsed) * 10);
+        // Update scale for warp effect
+        const scaleZ = Math.max(1, velocity * 15);
         temp.position.set(tempPos.x, tempPos.y, tempPos.z);
         temp.scale.set(1, 1, scaleZ);
         temp.updateMatrix();
@@ -182,10 +113,10 @@ function animateWarp() {
         
         // Update color for fade effect
         if (tempPos.z > 0) {
-            tempColor.setRGB(2.5, 2.5, 2.5);
+            tempColor.setRGB(1, 1, 1);
         } else {
             const fade = 1 - tempPos.z / -10;
-            tempColor.setRGB(fade * 2.5, fade * 2.5, fade * 2.5);
+            tempColor.setRGB(fade, fade, fade);
         }
         warpMesh.setColorAt(i, tempColor);
     }
@@ -193,7 +124,7 @@ function animateWarp() {
     warpMesh.instanceMatrix.needsUpdate = true;
     if (warpMesh.instanceColor) warpMesh.instanceColor.needsUpdate = true;
     
-    composer.render();
+    warpRenderer.render(warpScene, warpCamera);
 }
 animateWarp();
 
@@ -422,7 +353,6 @@ window.addEventListener("resize", function () {
     warpCamera.aspect = window.innerWidth / window.innerHeight;
     warpCamera.updateProjectionMatrix();
     warpRenderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
     
     camera.aspect = sceneLayer.clientWidth / sceneLayer.clientHeight;
     camera.updateProjectionMatrix();
