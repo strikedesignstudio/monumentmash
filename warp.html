@@ -50,7 +50,6 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://unpkg.com/postprocessing@6.28.7/build/postprocessing.umd.js"></script>
     
     <script>
 // --- SPACE WARP BACKGROUND ---
@@ -63,38 +62,10 @@ const warpRenderer = new THREE.WebGLRenderer({ canvas: warpCanvas, antialias: tr
 warpRenderer.setSize(window.innerWidth, window.innerHeight);
 warpRenderer.setClearColor(0x000000);
 
-// Post-processing setup
-const composer = new postprocessing.EffectComposer(warpRenderer);
-composer.addPass(new postprocessing.RenderPass(warpScene, warpCamera));
-
-// Bloom effect
-const bloomEffect = new postprocessing.BloomEffect({
-    intensity: 1.5,
-    luminanceThreshold: 0.2,
-    mipmapBlur: true
-});
-
-// Chromatic Aberration effect
-const CHROMATIC_ABERRATION_OFFSET = 0.007;
-const chromaticAberrationEffect = new postprocessing.ChromaticAberrationEffect({
-    offset: new THREE.Vector2(CHROMATIC_ABERRATION_OFFSET, CHROMATIC_ABERRATION_OFFSET)
-});
-
-const effectPass = new postprocessing.EffectPass(
-    warpCamera,
-    bloomEffect,
-    chromaticAberrationEffect
-);
-effectPass.renderToScreen = true;
-composer.addPass(effectPass);
-
 const COUNT = 300;
 const warpMesh = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.05, 8, 8),
-    new THREE.MeshBasicMaterial({ 
-        color: new THREE.Color(1.5, 1.5, 1.5),
-        toneMapped: false 
-    }),
+    new THREE.MeshBasicMaterial({ color: 0xffffff }),
     COUNT
 );
 warpScene.add(warpMesh);
@@ -120,29 +91,21 @@ function animateWarp() {
     requestAnimationFrame(animateWarp);
     
     const elapsed = clock.getElapsedTime();
-    const delta = clock.getDelta();
-    
-    // Exponential decay for deceleration effect
-    const velocity = Math.max(delta, Math.pow(0.5, elapsed));
-    
-    // Update chromatic aberration based on velocity (fades as speed decreases)
-    const chromaticStrength = Math.max(0, Math.pow(0.5, elapsed) * CHROMATIC_ABERRATION_OFFSET);
-    chromaticAberrationEffect.offset.x = chromaticStrength;
-    chromaticAberrationEffect.offset.y = chromaticStrength;
+    const velocity = Math.max(0.5, Math.pow(0.5, elapsed));
     
     for (let i = 0; i < COUNT; i++) {
         warpMesh.getMatrixAt(i, tempMatrix);
         tempPos.setFromMatrixPosition(tempMatrix);
         
-        // Update position with deceleration
+        // Update position
         if (tempPos.z > 10) {
             tempPos.z = -10;
         } else {
-            tempPos.z += velocity;
+            tempPos.z += velocity * 0.1;
         }
         
-        // Update scale for warp effect (stretching decreases as speed decreases)
-        const scaleZ = Math.max(1, Math.pow(0.5, elapsed) * 10);
+        // Update scale for warp effect
+        const scaleZ = Math.max(1, velocity * 15);
         temp.position.set(tempPos.x, tempPos.y, tempPos.z);
         temp.scale.set(1, 1, scaleZ);
         temp.updateMatrix();
@@ -150,10 +113,10 @@ function animateWarp() {
         
         // Update color for fade effect
         if (tempPos.z > 0) {
-            tempColor.setRGB(1.5, 1.5, 1.5);
+            tempColor.setRGB(1, 1, 1);
         } else {
             const fade = 1 - tempPos.z / -10;
-            tempColor.setRGB(fade * 1.5, fade * 1.5, fade * 1.5);
+            tempColor.setRGB(fade, fade, fade);
         }
         warpMesh.setColorAt(i, tempColor);
     }
@@ -161,7 +124,7 @@ function animateWarp() {
     warpMesh.instanceMatrix.needsUpdate = true;
     if (warpMesh.instanceColor) warpMesh.instanceColor.needsUpdate = true;
     
-    composer.render();
+    warpRenderer.render(warpScene, warpCamera);
 }
 animateWarp();
 
@@ -390,7 +353,6 @@ window.addEventListener("resize", function () {
     warpCamera.aspect = window.innerWidth / window.innerHeight;
     warpCamera.updateProjectionMatrix();
     warpRenderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
     
     camera.aspect = sceneLayer.clientWidth / sceneLayer.clientHeight;
     camera.updateProjectionMatrix();
