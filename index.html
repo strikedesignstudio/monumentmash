@@ -31,6 +31,7 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            filter: blur(2px);
         }
         #scene-layer {
             position: fixed;
@@ -67,10 +68,10 @@ warpCamera.position.z = 5;
 
 const warpRenderer = new THREE.WebGLRenderer({ 
     canvas: warpCanvas,
-    antialias: true 
+    antialias: false 
 });
 warpRenderer.setSize(window.innerWidth, window.innerHeight);
-warpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+warpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
 // Star field setup
 let COUNT = 400;
@@ -127,16 +128,17 @@ function animateWarp() {
         instancedMesh.getMatrixAt(i, tempMatrix);
         tempPosition.setFromMatrixPosition(tempMatrix);
         
-        // Update position (z-axis movement with deceleration)
+        // Update position (z-axis movement with deceleration to minimum speed)
         if (tempPosition.z > 10) {
             tempPosition.z = -10;
         } else {
-            const velocity = Math.max(delta, Math.pow(0.5, elapsedTime));
-            tempPosition.z += velocity;
+            const minSpeed = 0.3;
+            const velocity = Math.max(minSpeed, Math.pow(0.5, elapsedTime * 0.3) * 2);
+            tempPosition.z += velocity * delta;
         }
         
         // Update scale (warp effect)
-        const scaleZ = Math.max(1, Math.pow(0.5, elapsedTime) * 10);
+        const scaleZ = Math.max(1, Math.pow(0.5, elapsedTime * 0.3) * 5);
         tempObject.scale.set(1, 1, scaleZ);
         tempObject.position.copy(tempPosition);
         tempObject.updateMatrix();
