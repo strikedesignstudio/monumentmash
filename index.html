@@ -31,7 +31,6 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            filter: blur(2px);
         }
         #scene-layer {
             position: fixed;
@@ -48,30 +47,28 @@
     <div id="scene-layer"></div>
     <img class="clouds-overlay" src="cloudtop.gif" onerror="this.style.display='none'">
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-// --- SPACE WARP BACKGROUND (REPLACED WITH NEW SCRIPT) ---
-const warpCanvas = document.getElementById('warp-canvas');
-const warpScene = new THREE.Scene();
-warpScene.background = new THREE.Color(0x000000);
+// --- SPACE WARP BACKGROUND (UPDATED) ---
+const canvas = document.getElementById('warp-canvas');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
 
-const warpCamera = new THREE.PerspectiveCamera(
+const camera = new THREE.PerspectiveCamera(
     100,
     window.innerWidth / window.innerHeight,
     0.1,
     200
 );
-warpCamera.position.z = 5;
+camera.position.z = 5;
 
-const warpRenderer = new THREE.WebGLRenderer({ 
-    canvas: warpCanvas,
-    antialias: false 
+const renderer = new THREE.WebGLRenderer({ 
+    canvas,
+    antialias: true 
 });
-warpRenderer.setSize(window.innerWidth, window.innerHeight);
-warpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 // Star field setup
 let COUNT = 400;
@@ -79,7 +76,7 @@ let instancedMesh;
 
 function createStarField() {
     if (instancedMesh) {
-        warpScene.remove(instancedMesh);
+        scene.remove(instancedMesh);
         instancedMesh.geometry.dispose();
         instancedMesh.material.dispose();
     }
@@ -103,24 +100,24 @@ function createStarField() {
     }
     
     instancedMesh.instanceMatrix.needsUpdate = true;
-    warpScene.add(instancedMesh);
+    scene.add(instancedMesh);
 }
 
 createStarField();
 
 // Animation variables
-const warpClock = new THREE.Clock();
+const clock = new THREE.Clock();
 const tempMatrix = new THREE.Matrix4();
 const tempPosition = new THREE.Vector3();
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
 
-// Animation loop for warp
+// Animation loop
 function animateWarp() {
     requestAnimationFrame(animateWarp);
     
-    const elapsedTime = warpClock.getElapsedTime();
-    const delta = warpClock.getDelta();
+    const elapsedTime = clock.getElapsedTime();
+    const delta = clock.getDelta();
     
     if (!instancedMesh) return;
     
@@ -128,17 +125,16 @@ function animateWarp() {
         instancedMesh.getMatrixAt(i, tempMatrix);
         tempPosition.setFromMatrixPosition(tempMatrix);
         
-        // Update position (z-axis movement with deceleration to minimum speed)
+        // Update position (z-axis movement with deceleration)
         if (tempPosition.z > 10) {
             tempPosition.z = -10;
         } else {
-            const minSpeed = 0.3;
-            const velocity = Math.max(minSpeed, Math.pow(0.5, elapsedTime * 0.3) * 2);
-            tempPosition.z += velocity * delta;
+            const velocity = Math.max(delta, Math.pow(0.5, elapsedTime));
+            tempPosition.z += velocity;
         }
         
         // Update scale (warp effect)
-        const scaleZ = Math.max(1, Math.pow(0.5, elapsedTime * 0.3) * 5);
+        const scaleZ = Math.max(1, Math.pow(0.5, elapsedTime) * 10);
         tempObject.scale.set(1, 1, scaleZ);
         tempObject.position.copy(tempPosition);
         tempObject.updateMatrix();
@@ -160,30 +156,58 @@ function animateWarp() {
         instancedMesh.instanceColor.needsUpdate = true;
     }
     
-    warpRenderer.render(warpScene, warpCamera);
+    renderer.render(scene, camera);
 }
 
 animateWarp();
 
 // --- MAIN SCENE SETUP ---
-const scene = new THREE.Scene();
+const mainScene = new THREE.Scene();
 const sceneLayer = document.getElementById('scene-layer');
-const camera = new THREE.PerspectiveCamera(70, sceneLayer.clientWidth / sceneLayer.clientHeight, 0.01, 1000);
-camera.position.set(0, 0, 5);
+const mainCamera = new THREE.PerspectiveCamera(70, sceneLayer.clientWidth / sceneLayer.clientHeight, 0.01, 1000);
+mainCamera.position.set(0, 0, 5);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setClearColor(0x000000, 0);
-renderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
-sceneLayer.appendChild(renderer.domElement);
+const mainRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+mainRenderer.setClearColor(0x000000, 0);
+mainRenderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
+sceneLayer.appendChild(mainRenderer.domElement);
 
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enabled = true;
+// Basic OrbitControls implementation (simplified)
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+const rotationSpeed = 0.005;
+
+sceneLayer.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    previousMousePosition = { x: e.clientX, y: e.clientY };
+});
+
+sceneLayer.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        const deltaX = e.clientX - previousMousePosition.x;
+        const deltaY = e.clientY - previousMousePosition.y;
+        
+        mainCamera.position.x += deltaX * rotationSpeed;
+        mainCamera.position.y -= deltaY * rotationSpeed;
+        
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    }
+});
+
+sceneLayer.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
+sceneLayer.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    mainCamera.position.z += e.deltaY * 0.01;
+    mainCamera.position.z = Math.max(1, Math.min(mainCamera.position.z, 20));
+});
 
 // --- LIGHTS ---
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
 hemiLight.position.set(0, 2, 0);
-scene.add(hemiLight);
+mainScene.add(hemiLight);
 
 const rainbowLights = [];
 const rainbowColors = [0xff6b6b, 0xffd93d, 0x6bcf7f, 0x4d96ff, 0xc77dff, 0xff6bda];
@@ -191,7 +215,7 @@ rainbowColors.forEach((color, i) => {
     const light = new THREE.PointLight(color, 0.4, 100);
     const angle = (i / rainbowColors.length) * Math.PI * 2;
     light.position.set(Math.cos(angle) * 15, Math.sin(angle) * 15, -10);
-    scene.add(light);
+    mainScene.add(light);
     rainbowLights.push({ light, angle, radius: 15, speed: 0.001 + i * 0.0002 });
 });
 
@@ -200,11 +224,10 @@ const clickableObjects = [];
 const hoverableObjects = [];
 const warpingMeshes = [];
 let INTERSECTED;
-const loadingText = document.getElementById('loading');
 
 // --- AUDIO SETUP ---
 const listener = new THREE.AudioListener();
-camera.add(listener);
+mainCamera.add(listener);
 const audioLoader = new THREE.AudioLoader();
 let audioBufferShared = null;
 let currentSource = null;
@@ -241,90 +264,9 @@ const hoverColorMap = {
 
 audioLoader.load('audio/monmashcomp.mp3', function (buffer) {
     audioBufferShared = buffer;
+}, undefined, function(err) {
+    console.log('Audio file not found, continuing without audio');
 });
-
-// --- LOAD GLTF MODEL ---
-const loader = new THREE.GLTFLoader();
-loader.load(
-    'model/modelfull2.gltf',
-    function (gltf) {
-        if (!gltf || !gltf.scene) {
-            console.error('GLTF file did not load properly:', gltf);
-            return;
-        }
-
-        const model = gltf.scene;
-        model.scale.set(0.026, 0.026, 0.026);
-        model.position.set(0, -2.5, -5);
-
-        const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
-        const toRemove = [];
-
-        model.traverse((child) => {
-            if (meshesToRemove.includes(child.name)) {
-                toRemove.push(child);
-            }
-        });
-
-        toRemove.forEach((mesh) => {
-            mesh.traverse((descendant) => {
-                if (descendant.isMesh) {
-                    descendant.geometry.dispose();
-                    if (descendant.material) {
-                        if (Array.isArray(descendant.material)) {
-                            descendant.material.forEach((m) => m.dispose());
-                        } else {
-                            descendant.material.dispose();
-                        }
-                    }
-                }
-            });
-            if (mesh.parent) mesh.parent.remove(mesh);
-        });
-
-        model.traverse((child) => {
-            if (child.isMesh && !meshesToRemove.includes(child.name)) {
-                clickableObjects.push(child);
-                child.material.transparent = true;
-                
-                if (Object.keys(hoverColorMap).includes(child.name)) {
-                    hoverableObjects.push(child);
-                    warpingMeshes.push(child);
-                    child.userData.originalPosition = child.position.clone();
-                    
-                    const radius = 100 + Math.random() * 200;
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.random() * Math.PI;
-                    
-                    child.position.x = radius * Math.sin(phi) * Math.cos(theta);
-                    child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
-                    child.position.z = radius * Math.cos(phi) - 5;
-                    
-                    child.userData.velocityX = (Math.random() - 0.5) * 0.02;
-                    child.userData.velocityY = (Math.random() - 0.5) * 0.02;
-                    child.userData.velocityZ = (Math.random() - 0.5) * 0.02;
-                    
-                    child.userData.rotationSpeed = {
-                        x: (Math.random() - 0.5) * 0.01,
-                        y: (Math.random() - 0.5) * 0.01,
-                        z: (Math.random() - 0.5) * 0.01
-                    };
-                }
-            }
-        });
-
-        scene.add(model);
-        if (loadingText) loadingText.remove();
-    },
-    function (xhr) {
-        if (xhr.total && loadingText) {
-            loadingText.innerText = `Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
-        }
-    },
-    function (error) {
-        console.error('GLTF load error:', error);
-    }
-);
 
 // --- RAYCASTING ---
 const raycaster = new THREE.Raycaster();
@@ -346,7 +288,7 @@ function onClick(event) {
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, camera);
+    raycaster.setFromCamera(mouse, mainCamera);
     const intersects = raycaster.intersectObjects(clickableObjects, true);
 
     if (intersects.length > 0) {
@@ -365,7 +307,7 @@ function onMouseMove(event) {
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, camera);
+    raycaster.setFromCamera(mouse, mainCamera);
     const intersects = raycaster.intersectObjects(hoverableObjects, true);
 
     if (intersects.length > 0) {
@@ -383,18 +325,26 @@ function onMouseMove(event) {
     }
 }
 
-sceneLayer.addEventListener("mousemove", onMouseMove);
 sceneLayer.addEventListener("click", onClick);
 
 window.addEventListener("resize", function () {
-    warpCamera.aspect = window.innerWidth / window.innerHeight;
-    warpCamera.updateProjectionMatrix();
-    warpRenderer.setSize(window.innerWidth, window.innerHeight);
-    
-    camera.aspect = sceneLayer.clientWidth / sceneLayer.clientHeight;
+    camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    mainCamera.aspect = sceneLayer.clientWidth / sceneLayer.clientHeight;
+    mainCamera.updateProjectionMatrix();
+    mainRenderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
 });
+
+// Create a simple placeholder cube for demonstration
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, transparent: true });
+const cube = new THREE.Mesh(geometry, material);
+cube.name = "Hilmi";
+mainScene.add(cube);
+clickableObjects.push(cube);
+hoverableObjects.push(cube);
 
 // --- ANIMATE LOOP ---
 function animate() {
@@ -441,7 +391,10 @@ function animate() {
         item.light.position.y = Math.sin(item.angle) * item.radius;
     });
 
-    renderer.render(scene, camera);
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+
+    mainRenderer.render(mainScene, mainCamera);
 }
 animate();
     </script>
