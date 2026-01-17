@@ -48,6 +48,7 @@
     <img class="clouds-overlay" src="cloudtop.gif" onerror="this.style.display='none'">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     
     <script>
 // --- SPACE WARP BACKGROUND (IMPROVED) ---
@@ -283,6 +284,90 @@ function onMouseMove(event) {
 sceneLayer.addEventListener("click", onClick);
 sceneLayer.addEventListener("mousemove", onMouseMove);
 
+// --- LOAD GLTF MODEL ---
+const loader = new THREE.GLTFLoader();
+loader.load(
+    'model/modelfull2.gltf',
+    function (gltf) {
+        if (!gltf || !gltf.scene) {
+            console.error('GLTF file did not load properly:', gltf);
+            return;
+        }
+        const model = gltf.scene;
+        model.scale.set(0.026, 0.026, 0.026);
+        model.position.set(0, -2.5, -5); // Push model far into the distance
+        const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
+        const toRemove = [];
+        // --- Collect unwanted meshes (including their children) ---
+        model.traverse((child) => {
+            if (meshesToRemove.includes(child.name)) {
+                toRemove.push(child);
+            }
+        });
+        // --- Remove unwanted meshes & descendants safely ---
+        toRemove.forEach((mesh) => {
+            mesh.traverse((descendant) => {
+                if (descendant.isMesh) {
+                    descendant.geometry.dispose();
+                    if (descendant.material) {
+                        if (Array.isArray(descendant.material)) {
+                            descendant.material.forEach((m) => m.dispose());
+                        } else {
+                            descendant.material.dispose();
+                        }
+                    }
+                }
+            });
+            if (mesh.parent) mesh.parent.remove(mesh);
+        });
+        // --- Populate clickable & hoverable objects ---
+        model.traverse((child) => {
+            if (child.isMesh && !meshesToRemove.includes(child.name)) {
+                clickableObjects.push(child);
+                child.material.transparent = true;
+                
+                if (Object.keys(hoverColorMap).includes(child.name)) {
+                    hoverableObjects.push(child);
+                    
+                    // Setup for random floating effect around center
+                    warpingMeshes.push(child);
+                    child.userData.originalPosition = child.position.clone();
+                    
+                    // Random starting position around the center model - much farther out
+                    const radius = 100 + Math.random() * 200; // Distance from center (increased range)
+                    const theta = Math.random() * Math.PI * 2; // Random angle around Y axis
+                    const phi = Math.random() * Math.PI; // Random vertical angle
+                    
+                    child.position.x = radius * Math.sin(phi) * Math.cos(theta);
+                    child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
+                    child.position.z = radius * Math.cos(phi) - 5;
+                    
+                    // Random drift velocities for organic floating
+                    child.userData.velocityX = (Math.random() - 0.5) * 0.02;
+                    child.userData.velocityY = (Math.random() - 0.5) * 0.02;
+                    child.userData.velocityZ = (Math.random() - 0.5) * 0.02;
+                    
+                    // Rotation for added visual interest
+                    child.userData.rotationSpeed = {
+                        x: (Math.random() - 0.5) * 0.01,
+                        y: (Math.random() - 0.5) * 0.01,
+                        z: (Math.random() - 0.5) * 0.01
+                    };
+                }
+            }
+        });
+        mainScene.add(model);
+    },
+    function (xhr) {
+        if (xhr.total) {
+            console.log(`Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`);
+        }
+    },
+    function (error) {
+        console.error('GLTF load error:', error);
+    }
+);
+
 window.addEventListener("resize", function () {
     warpCamera.aspect = window.innerWidth / window.innerHeight;
     warpCamera.updateProjectionMatrix();
@@ -293,14 +378,8 @@ window.addEventListener("resize", function () {
     mainRenderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
 });
 
-// Create a simple placeholder cube for demonstration
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, transparent: true });
-const cube = new THREE.Mesh(geometry, material);
-cube.name = "Hilmi";
-mainScene.add(cube);
-clickableObjects.push(cube);
-hoverableObjects.push(cube);
+// Remove placeholder cube since we're loading the actual model
+mainScene.remove(cube);
 
 // --- ANIMATE LOOP ---
 function animate() {
@@ -400,9 +479,6 @@ function animate() {
         item.light.position.x = Math.cos(item.angle) * item.radius;
         item.light.position.y = Math.sin(item.angle) * item.radius;
     });
-
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
 
     mainRenderer.render(mainScene, mainCamera);
 }
