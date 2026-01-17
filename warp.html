@@ -110,11 +110,11 @@
                     tempPosition.z = -10;
                 } else {
                     // Smoothly decelerate to a minimum speed instead of stopping
-                    const minSpeed = 0.02;
-                    const maxSpeed = 5.0;
-                    const decayFactor = 0.3;
+                    const minSpeed = 0.5;
+                    const maxSpeed = 10.0;
+                    const decayFactor = 0.5;
                     const velocity = minSpeed + (maxSpeed - minSpeed) * Math.exp(-decayFactor * elapsedTime);
-                    tempPosition.z += velocity * delta;
+                    tempPosition.z += velocity * 0.016; // ~60fps frame time
                 }
                 
                 // Update scale (warp effect)
