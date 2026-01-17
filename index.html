@@ -378,9 +378,6 @@ window.addEventListener("resize", function () {
     mainRenderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
 });
 
-// Remove placeholder cube since we're loading the actual model
-mainScene.remove(cube);
-
 // --- ANIMATE LOOP ---
 function animate() {
     requestAnimationFrame(animate);
