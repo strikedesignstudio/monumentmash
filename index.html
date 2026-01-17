@@ -43,7 +43,7 @@
         #play-pause-btn {
             position: fixed;
             bottom: 30px;
-            right: 30px;
+            left: 30px;
             z-index: 20;
             width: 60px;
             height: 60px;
@@ -164,6 +164,27 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     
     <script>
+// --- ABOUT PAGE TOGGLE (Initialize first) ---
+document.addEventListener('DOMContentLoaded', function() {
+    const aboutPageBtn = document.getElementById('about-page-btn');
+    const aboutPage = document.querySelector('.aboutpage');
+    const aboutPageClose = document.querySelector('.aboutpage-close');
+
+    function toggleAboutPage() {
+        aboutPage.classList.toggle('open');
+    }
+
+    aboutPageBtn.addEventListener('click', toggleAboutPage);
+    aboutPageClose.addEventListener('click', toggleAboutPage);
+
+    // Close about page when clicking outside the content
+    aboutPage.addEventListener('click', (e) => {
+        if (e.target === aboutPage) {
+            toggleAboutPage();
+        }
+    });
+});
+
 // --- SPACE WARP BACKGROUND (IMPROVED) ---
 const warpCanvas = document.getElementById('warp-canvas');
 const warpScene = new THREE.Scene();
