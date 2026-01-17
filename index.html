@@ -66,6 +66,34 @@
         #play-pause-btn.visible {
             display: flex;
         }
+
+         #about-page-btn {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 20;
+            width: 60px;
+            height: 60px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .about-page {
+            width:100vw;
+            height: 100vh;
+            z-index: 15;
+            padding: 20px;
+        }
+
+        .about-page p {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
     </style>
 </head>
 <body>
@@ -73,6 +101,11 @@
     <div id="scene-layer"></div>
     <img class="clouds-overlay" src="cloudtop.gif" onerror="this.style.display='none'">
     <button id="play-pause-btn">▶</button>
+    <button id="about-page-btn">Info</button>
+
+    <div class="aboutpage">
+        <p>For over 100 years the statues on Deptford Town Hall have projected a colonial perspective. Visit new monuments imagined by local young people by clicking the objects on the screen and listening to  experiences, music, stories and poetry that challenge colonial history in the present and share important practices of resistance.</p>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
