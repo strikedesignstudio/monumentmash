@@ -40,12 +40,39 @@
             height: 100%;
             z-index: 5;
         }
+        #play-pause-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 20;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        #play-pause-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        #play-pause-btn.visible {
+            display: flex;
+        }
     </style>
 </head>
 <body>
     <canvas id="warp-canvas"></canvas>
     <div id="scene-layer"></div>
     <img class="clouds-overlay" src="cloudtop.gif" onerror="this.style.display='none'">
+    <button id="play-pause-btn">▶</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -187,6 +214,9 @@ mainCamera.add(listener);
 const audioLoader = new THREE.AudioLoader();
 let audioBufferShared = null;
 let currentSource = null;
+let isPlaying = false;
+let audioStartTime = 0;
+let audioPauseTime = 0;
 
 const audioSegments = {
     "Hilmi": 6,
@@ -218,8 +248,15 @@ const hoverColorMap = {
     "Dominic": 0x00ff88
 };
 
+const playPauseBtn = document.getElementById('play-pause-btn');
+
 audioLoader.load('audio/monmashcomp.mp3', function (buffer) {
     audioBufferShared = buffer;
+    // Auto-play from the beginning
+    playFrom(0);
+    isPlaying = true;
+    playPauseBtn.innerHTML = '⏸';
+    playPauseBtn.classList.add('visible');
 }, undefined, function(err) {
     console.log('Audio file not found, continuing without audio');
 });
@@ -237,7 +274,31 @@ function playFrom(startTime) {
     source.connect(listener.getInput());
     source.start(0, startTime);
     currentSource = source;
+    audioStartTime = audioCtx.currentTime - startTime;
+    isPlaying = true;
+    playPauseBtn.innerHTML = '⏸';
 }
+
+function togglePlayPause() {
+    if (!audioBufferShared) return;
+    
+    const audioCtx = listener.context;
+    
+    if (isPlaying) {
+        // Pause
+        if (currentSource) {
+            currentSource.stop();
+            audioPauseTime = audioCtx.currentTime - audioStartTime;
+        }
+        isPlaying = false;
+        playPauseBtn.innerHTML = '▶';
+    } else {
+        // Resume
+        playFrom(audioPauseTime);
+    }
+}
+
+playPauseBtn.addEventListener('click', togglePlayPause);
 
 function onClick(event) {
     const rect = sceneLayer.getBoundingClientRect();
@@ -254,7 +315,11 @@ function onClick(event) {
             setTimeout(() => (clicked.material.opacity = 1), 300);
         }
         const segmentStart = audioSegments[clicked.name];
-        if (segmentStart !== undefined) playFrom(segmentStart);
+        if (segmentStart !== undefined) {
+            playFrom(segmentStart);
+            isPlaying = true;
+            playPauseBtn.innerHTML = '⏸';
+        }
     }
 }
 
