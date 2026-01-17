@@ -43,7 +43,7 @@
         #play-pause-btn {
             position: fixed;
             bottom: 30px;
-            left: 30px;
+            right: 30px;
             z-index: 20;
             width: 60px;
             height: 60px;
@@ -66,34 +66,75 @@
         #play-pause-btn.visible {
             display: flex;
         }
-
-         #about-page-btn {
+        #about-page-btn {
             position: fixed;
             top: 30px;
             right: 30px;
             z-index: 20;
-            width: 60px;
-            height: 60px;
+            padding: 12px 24px;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
             color: white;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        #about-page-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        .aboutpage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 30;
+            display: none;
             align-items: center;
             justify-content: center;
+            padding: 40px;
+            backdrop-filter: blur(20px);
         }
-
-        .aboutpage {
-            width:100vw;
-            height: 100vh;
-            z-index: 15;
-            padding: 20px;
-            background: black;
+        .aboutpage.open {
+            display: flex;
+        }
+        .aboutpage-content {
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
             color: white;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            position: relative;
         }
-
-        .aboutpage p {
-            max-width: 900px;
-            margin: 0 auto;
+        .aboutpage-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
         }
-
+        .aboutpage-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
     </style>
 </head>
 <body>
@@ -102,9 +143,21 @@
     <img class="clouds-overlay" src="cloudtop.gif" onerror="this.style.display='none'">
     <button id="play-pause-btn">▶</button>
     <button id="about-page-btn">Info</button>
-
+    
     <div class="aboutpage">
-        <p>For over 100 years the statues on Deptford Town Hall have projected a colonial perspective. Visit new monuments imagined by local young people by clicking the objects on the screen and listening to  experiences, music, stories and poetry that challenge colonial history in the present and share important practices of resistance.</p>
+        <div class="aboutpage-content">
+            <button class="aboutpage-close">×</button>
+            <h1>Monument Mashup</h1>
+            <p>Welcome to the Monument Mashup experience.</p>
+            <p>Click on the floating monuments to explore different audio segments and watch them drift through space.</p>
+            <h2>Controls</h2>
+            <ul>
+                <li><strong>Click & Drag:</strong> Rotate the camera view</li>
+                <li><strong>Scroll:</strong> Zoom in and out</li>
+                <li><strong>Click Monuments:</strong> Jump to audio segments</li>
+                <li><strong>Play/Pause:</strong> Control audio playback</li>
+            </ul>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -283,7 +336,7 @@ const hoverColorMap = {
 
 const playPauseBtn = document.getElementById('play-pause-btn');
 
-audioLoader.load('audio/monmashcompmin.mp3', function (buffer) {
+audioLoader.load('audio/monmashcomp.mp3', function (buffer) {
     audioBufferShared = buffer;
     // Auto-play from the beginning
     playFrom(0);
