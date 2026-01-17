@@ -50,25 +50,27 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-// --- SPACE WARP BACKGROUND (UPDATED) ---
-const canvas = document.getElementById('warp-canvas');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
+// --- SPACE WARP BACKGROUND (IMPROVED) ---
+const warpCanvas = document.getElementById('warp-canvas');
+const warpScene = new THREE.Scene();
+warpScene.background = new THREE.Color(0x000000);
 
-const camera = new THREE.PerspectiveCamera(
+const warpCamera = new THREE.PerspectiveCamera(
     100,
     window.innerWidth / window.innerHeight,
     0.1,
     200
 );
-camera.position.z = 5;
+warpCamera.position.z = 5;
 
-const renderer = new THREE.WebGLRenderer({ 
-    canvas,
+const warpRenderer = new THREE.WebGLRenderer({ 
+    canvas: warpCanvas,
     antialias: true 
 });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+warpRenderer.setSize(window.innerWidth, window.innerHeight);
+warpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+warpRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+warpRenderer.toneMappingExposure = 1.2;
 
 // Star field setup
 let COUNT = 400;
@@ -76,15 +78,17 @@ let instancedMesh;
 
 function createStarField() {
     if (instancedMesh) {
-        scene.remove(instancedMesh);
+        warpScene.remove(instancedMesh);
         instancedMesh.geometry.dispose();
         instancedMesh.material.dispose();
     }
     
     const geometry = new THREE.SphereGeometry(0.05, 8, 8);
     const material = new THREE.MeshBasicMaterial({ 
-        color: new THREE.Color(1.5, 1.5, 1.5),
-        toneMapped: false
+        color: new THREE.Color(2.0, 2.0, 2.5),
+        toneMapped: false,
+        transparent: true,
+        opacity: 0.9
     });
     
     instancedMesh = new THREE.InstancedMesh(geometry, material, COUNT);
@@ -100,7 +104,7 @@ function createStarField() {
     }
     
     instancedMesh.instanceMatrix.needsUpdate = true;
-    scene.add(instancedMesh);
+    warpScene.add(instancedMesh);
 }
 
 createStarField();
@@ -111,55 +115,6 @@ const tempMatrix = new THREE.Matrix4();
 const tempPosition = new THREE.Vector3();
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
-
-// Animation loop
-function animateWarp() {
-    requestAnimationFrame(animateWarp);
-    
-    const elapsedTime = clock.getElapsedTime();
-    const delta = clock.getDelta();
-    
-    if (!instancedMesh) return;
-    
-    for (let i = 0; i < COUNT; i++) {
-        instancedMesh.getMatrixAt(i, tempMatrix);
-        tempPosition.setFromMatrixPosition(tempMatrix);
-        
-        // Update position (z-axis movement with deceleration)
-        if (tempPosition.z > 10) {
-            tempPosition.z = -10;
-        } else {
-            const velocity = Math.max(delta, Math.pow(0.5, elapsedTime));
-            tempPosition.z += velocity;
-        }
-        
-        // Update scale (warp effect)
-        const scaleZ = Math.max(1, Math.pow(0.5, elapsedTime) * 10);
-        tempObject.scale.set(1, 1, scaleZ);
-        tempObject.position.copy(tempPosition);
-        tempObject.updateMatrix();
-        
-        instancedMesh.setMatrixAt(i, tempObject.matrix);
-        
-        // Update color (fade effect)
-        if (tempPosition.z > 0) {
-            tempColor.setRGB(1, 1, 1);
-        } else {
-            const fade = 1 - tempPosition.z / -10;
-            tempColor.setRGB(fade, fade, fade);
-        }
-        instancedMesh.setColorAt(i, tempColor);
-    }
-    
-    instancedMesh.instanceMatrix.needsUpdate = true;
-    if (instancedMesh.instanceColor) {
-        instancedMesh.instanceColor.needsUpdate = true;
-    }
-    
-    renderer.render(scene, camera);
-}
-
-animateWarp();
 
 // --- MAIN SCENE SETUP ---
 const mainScene = new THREE.Scene();
@@ -326,11 +281,12 @@ function onMouseMove(event) {
 }
 
 sceneLayer.addEventListener("click", onClick);
+sceneLayer.addEventListener("mousemove", onMouseMove);
 
 window.addEventListener("resize", function () {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    warpCamera.aspect = window.innerWidth / window.innerHeight;
+    warpCamera.updateProjectionMatrix();
+    warpRenderer.setSize(window.innerWidth, window.innerHeight);
     
     mainCamera.aspect = sceneLayer.clientWidth / sceneLayer.clientHeight;
     mainCamera.updateProjectionMatrix();
@@ -350,6 +306,60 @@ hoverableObjects.push(cube);
 function animate() {
     requestAnimationFrame(animate);
 
+    // Animate warp background
+    const elapsedTime = clock.getElapsedTime();
+    
+    if (instancedMesh) {
+        for (let i = 0; i < COUNT; i++) {
+            instancedMesh.getMatrixAt(i, tempMatrix);
+            tempPosition.setFromMatrixPosition(tempMatrix);
+            
+            // Update position (z-axis movement with deceleration)
+            if (tempPosition.z > 10) {
+                tempPosition.z = -10;
+            } else {
+                // Smoothly decelerate to a minimum speed instead of stopping
+                const minSpeed = 0.5;
+                const maxSpeed = 10.0;
+                const decayFactor = 0.5;
+                const velocity = minSpeed + (maxSpeed - minSpeed) * Math.exp(-decayFactor * elapsedTime);
+                tempPosition.z += velocity * 0.016;
+            }
+            
+            // Update scale (warp effect + perspective size)
+            const maxScale = 15;
+            const minScale = 1;
+            const decayFactor = 0.5;
+            const scaleZ = minScale + (maxScale - minScale) * Math.exp(-decayFactor * elapsedTime);
+            
+            // Make stars smaller as they get closer (perspective effect)
+            const distanceScale = Math.max(0.3, 1 - (tempPosition.z + 10) / 20);
+            tempObject.scale.set(distanceScale, distanceScale, scaleZ);
+            tempObject.position.copy(tempPosition);
+            tempObject.updateMatrix();
+            
+            instancedMesh.setMatrixAt(i, tempObject.matrix);
+            
+            // Update color (fade effect with glow)
+            if (tempPosition.z > 0) {
+                tempColor.setRGB(1.2, 1.2, 1.5);
+            } else {
+                const fade = 1 - tempPosition.z / -10;
+                const dimming = fade * 0.7 + 0.3;
+                tempColor.setRGB(dimming * 1.2, dimming * 1.2, dimming * 1.5);
+            }
+            instancedMesh.setColorAt(i, tempColor);
+        }
+        
+        instancedMesh.instanceMatrix.needsUpdate = true;
+        if (instancedMesh.instanceColor) {
+            instancedMesh.instanceColor.needsUpdate = true;
+        }
+    }
+    
+    warpRenderer.render(warpScene, warpCamera);
+
+    // Animate main scene
     hoverableObjects.forEach((obj) => {
         if (obj.material && obj.material.color && obj.targetColor) {
             obj.material.color.lerp(obj.targetColor, 0.1);
