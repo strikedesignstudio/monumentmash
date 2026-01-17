@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Warp Effect</title>
+    <title>Star Warp Effect</title>
     <style>
         * {
             margin: 0;
@@ -13,8 +13,7 @@
         
         body {
             overflow: hidden;
-            background: #000;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: Arial, sans-serif;
         }
         
         #canvas {
@@ -22,12 +21,41 @@
             width: 100vw;
             height: 100vh;
         }
-
-
+        
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+        }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label>Star Count: <span id="countValue">400</span></label>
+            <input type="range" id="countSlider" min="100" max="1000" value="400" step="50">
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -49,9 +77,11 @@
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
         
         // Star field setup
-        const COUNT = 400;
+        let COUNT = 400;
         let instancedMesh;
         
         function createStarField() {
@@ -63,8 +93,10 @@
             
             const geometry = new THREE.SphereGeometry(0.05, 8, 8);
             const material = new THREE.MeshBasicMaterial({ 
-                color: new THREE.Color(1.5, 1.5, 1.5),
-                toneMapped: false
+                color: new THREE.Color(2.0, 2.0, 2.5),
+                toneMapped: false,
+                transparent: true,
+                opacity: 0.9
             });
             
             instancedMesh = new THREE.InstancedMesh(geometry, material, COUNT);
@@ -117,20 +149,29 @@
                     tempPosition.z += velocity * 0.016; // ~60fps frame time
                 }
                 
-                // Update scale (warp effect)
-                const scaleZ = Math.max(1, Math.pow(0.5, elapsedTime) * 10);
-                tempObject.scale.set(1, 1, scaleZ);
+                // Update scale (warp effect + perspective size)
+                const maxScale = 15;
+                const minScale = 1;
+                const decayFactor = 0.5;
+                const scaleZ = minScale + (maxScale - minScale) * Math.exp(-decayFactor * elapsedTime);
+                
+                // Make stars smaller as they get closer (perspective effect)
+                const distanceScale = Math.max(0.3, 1 - (tempPosition.z + 10) / 20);
+                tempObject.scale.set(distanceScale, distanceScale, scaleZ);
                 tempObject.position.copy(tempPosition);
                 tempObject.updateMatrix();
                 
                 instancedMesh.setMatrixAt(i, tempObject.matrix);
                 
-                // Update color (fade effect)
+                // Update color (fade effect with glow)
                 if (tempPosition.z > 0) {
-                    tempColor.setRGB(1, 1, 1);
+                    // Brighter when further away
+                    tempColor.setRGB(1.2, 1.2, 1.5);
                 } else {
+                    // Fade and dim as they approach
                     const fade = 1 - tempPosition.z / -10;
-                    tempColor.setRGB(fade, fade, fade);
+                    const dimming = fade * 0.7 + 0.3;
+                    tempColor.setRGB(dimming * 1.2, dimming * 1.2, dimming * 1.5);
                 }
                 instancedMesh.setColorAt(i, tempColor);
             }
