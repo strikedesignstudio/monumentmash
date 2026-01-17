@@ -109,8 +109,12 @@
                 if (tempPosition.z > 10) {
                     tempPosition.z = -10;
                 } else {
-                    const velocity = Math.max(delta, Math.pow(0.5, elapsedTime));
-                    tempPosition.z += velocity;
+                    // Smoothly decelerate to a minimum speed instead of stopping
+                    const minSpeed = 0.02;
+                    const maxSpeed = 5.0;
+                    const decayFactor = 0.3;
+                    const velocity = minSpeed + (maxSpeed - minSpeed) * Math.exp(-decayFactor * elapsedTime);
+                    tempPosition.z += velocity * delta;
                 }
                 
                 // Update scale (warp effect)
