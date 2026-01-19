@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Monument Mashup</title>
+
     <style>
         body {
             margin: 0;
@@ -39,6 +40,73 @@
             width: 100%;
             height: 100%;
             z-index: 5;
+        }
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+        .loading-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            color: #fff;
+        }
+        .loading-bar-container {
+            width: 400px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .loading-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcf7f, #4d96ff, #c77dff, #ff6bda);
+            transition: width 0.3s ease;
+        }
+        .loading-text {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        #start-experience-btn {
+            display: none;
+            padding: 20px 50px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        #start-experience-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        #start-experience-btn.visible {
+            display: inline-block;
         }
         #play-pause-btn {
             position: fixed;
@@ -136,8 +204,21 @@
             transform: rotate(90deg);
         }
     </style>
+
 </head>
 <body>
+
+    <div id="loading-screen">
+        <div class="loading-content">
+            <h1 class="loading-title">Monument Mashup</h1>
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+            <div class="loading-text" id="loading-text">Loading... 0%</div>
+            <button id="start-experience-btn">Start Experience</button>
+        </div>
+    </div>
+
     <canvas id="warp-canvas"></canvas>
     <div id="scene-layer"></div>
 
@@ -171,8 +252,42 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     
-    <script>
-// --- ABOUT PAGE TOGGLE (Initialize first) ---
+        <script>
+// --- LOADING MANAGER ---
+let loadingProgress = { model: 0, audio: 0 };
+let experienceStarted = false;
+const loadingBar = document.getElementById('loading-bar');
+const loadingText = document.getElementById('loading-text');
+const startBtn = document.getElementById('start-experience-btn');
+const loadingScreen = document.getElementById('loading-screen');
+
+function updateLoadingBar() {
+    const totalProgress = (loadingProgress.model + loadingProgress.audio) / 2;
+    loadingBar.style.width = totalProgress + '%';
+    loadingText.textContent = `Loading... ${Math.round(totalProgress)}%`;
+    
+    if (totalProgress >= 100) {
+        loadingText.textContent = 'Ready to start!';
+        startBtn.classList.add('visible');
+    }
+}
+
+function startExperience() {
+    experienceStarted = true;
+    warpAnimationEnabled = true;
+    loadingScreen.classList.add('hidden');
+    
+    if (audioBufferShared) {
+        playFrom(0);
+        isPlaying = true;
+        playPauseBtn.innerHTML = '⏸';
+        playPauseBtn.classList.add('visible');
+    }
+}
+
+startBtn.addEventListener('click', startExperience);
+
+// --- ABOUT PAGE TOGGLE ---
 document.addEventListener('DOMContentLoaded', function() {
     const aboutPageBtn = document.getElementById('about-page-btn');
     const aboutPage = document.querySelector('.aboutpage');
@@ -185,7 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
     aboutPageBtn.addEventListener('click', toggleAboutPage);
     aboutPageClose.addEventListener('click', toggleAboutPage);
 
-    // Close about page when clicking outside the content
     aboutPage.addEventListener('click', (e) => {
         if (e.target === aboutPage) {
             toggleAboutPage();
@@ -193,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// --- SPACE WARP BACKGROUND (IMPROVED) ---
+// --- SPACE WARP BACKGROUND ---
 const warpCanvas = document.getElementById('warp-canvas');
 const warpScene = new THREE.Scene();
 warpScene.background = new THREE.Color(0x000000);
@@ -215,9 +329,9 @@ warpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 warpRenderer.toneMapping = THREE.ACESFilmicToneMapping;
 warpRenderer.toneMappingExposure = 1.2;
 
-// Star field setup
 let COUNT = 400;
 let instancedMesh;
+let warpAnimationEnabled = false;
 
 function createStarField() {
     if (instancedMesh) {
@@ -236,7 +350,6 @@ function createStarField() {
     
     instancedMesh = new THREE.InstancedMesh(geometry, material, COUNT);
     
-    // Initialize positions
     const temp = new THREE.Object3D();
     for (let i = 0; i < COUNT; i++) {
         temp.position.x = (Math.random() - 0.5) * 10;
@@ -252,7 +365,6 @@ function createStarField() {
 
 createStarField();
 
-// Animation variables
 const clock = new THREE.Clock();
 const tempMatrix = new THREE.Matrix4();
 const tempPosition = new THREE.Vector3();
@@ -270,7 +382,6 @@ mainRenderer.setClearColor(0x000000, 0);
 mainRenderer.setSize(sceneLayer.clientWidth, sceneLayer.clientHeight);
 sceneLayer.appendChild(mainRenderer.domElement);
 
-// Basic OrbitControls implementation (simplified)
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const rotationSpeed = 0.005;
@@ -367,13 +478,17 @@ const playPauseBtn = document.getElementById('play-pause-btn');
 
 audioLoader.load('audio/monmashcompmin.mp3', function (buffer) {
     audioBufferShared = buffer;
-    // Auto-play from the beginning
-    playFrom(0);
-    isPlaying = true;
-    playPauseBtn.innerHTML = '⏸';
-    playPauseBtn.classList.add('visible');
-}, undefined, function(err) {
+    loadingProgress.audio = 100;
+    updateLoadingBar();
+}, function(xhr) {
+    if (xhr.total) {
+        loadingProgress.audio = (xhr.loaded / xhr.total) * 100;
+        updateLoadingBar();
+    }
+}, function(err) {
     console.log('Audio file not found, continuing without audio');
+    loadingProgress.audio = 100;
+    updateLoadingBar();
 });
 
 // --- RAYCASTING ---
@@ -400,7 +515,6 @@ function togglePlayPause() {
     const audioCtx = listener.context;
     
     if (isPlaying) {
-        // Pause
         if (currentSource) {
             currentSource.stop();
             audioPauseTime = audioCtx.currentTime - audioStartTime;
@@ -408,7 +522,6 @@ function togglePlayPause() {
         isPlaying = false;
         playPauseBtn.innerHTML = '▶';
     } else {
-        // Resume
         playFrom(audioPauseTime);
     }
 }
@@ -469,23 +582,25 @@ const loader = new THREE.GLTFLoader();
 loader.load(
     'model/modelfull2.gltf',
     function (gltf) {
+        loadingProgress.model = 100;
+        updateLoadingBar();
+        
         if (!gltf || !gltf.scene) {
             console.error('GLTF file did not load properly:', gltf);
             return;
         }
         const model = gltf.scene;
         model.scale.set(0.026, 0.026, 0.026);
-        model.position.set(0, -2.5, -5); // Push model far into the distance
+        model.position.set(0, -2.5, -5);
         const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
         const toRemove = [];
-        // --- Collect unwanted meshes (including their children) ---
+        
         model.traverse((child) => {
             if (meshesToRemove.includes(child.name)) {
                 toRemove.push(child);
             }
         });
 
-        // --- Remove unwanted meshes & descendants safely ---
         toRemove.forEach((mesh) => {
             mesh.traverse((descendant) => {
                 if (descendant.isMesh) {
@@ -502,7 +617,6 @@ loader.load(
             if (mesh.parent) mesh.parent.remove(mesh);
         });
 
-        // --- Populate clickable & hoverable objects ---
         model.traverse((child) => {
             if (child.isMesh && !meshesToRemove.includes(child.name)) {
                 clickableObjects.push(child);
@@ -511,25 +625,21 @@ loader.load(
                 if (Object.keys(hoverColorMap).includes(child.name)) {
                     hoverableObjects.push(child);
                     
-                    // Setup for random floating effect around center
                     warpingMeshes.push(child);
                     child.userData.originalPosition = child.position.clone();
                     
-                    // Random starting position around the center model - much farther out
-                    const radius = 100 + Math.random() * 200; // Distance from center (increased range)
-                    const theta = Math.random() * Math.PI * 2; // Random angle around Y axis
-                    const phi = Math.random() * Math.PI; // Random vertical angle
+                    const radius = 100 + Math.random() * 200;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
                     
                     child.position.x = radius * Math.sin(phi) * Math.cos(theta);
                     child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
                     child.position.z = radius * Math.cos(phi) - 5;
                     
-                    // Random drift velocities for organic floating
                     child.userData.velocityX = (Math.random() - 0.5) * 0.02;
                     child.userData.velocityY = (Math.random() - 0.5) * 0.02;
                     child.userData.velocityZ = (Math.random() - 0.5) * 0.02;
                     
-                    // Rotation for added visual interest
                     child.userData.rotationSpeed = {
                         x: (Math.random() - 0.5) * 0.01,
                         y: (Math.random() - 0.5) * 0.01,
@@ -542,7 +652,9 @@ loader.load(
     },
     function (xhr) {
         if (xhr.total) {
-            console.log(`Loading... ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`);
+            loadingProgress.model = (xhr.loaded / xhr.total) * 100;
+            updateLoadingBar();
+            console.log(`Loading model... ${Math.round(loadingProgress.model)}%`);
         }
     },
     function (error) {
@@ -564,70 +676,61 @@ window.addEventListener("resize", function () {
 function animate() {
     requestAnimationFrame(animate);
 
-    // Animate warp background
-    const elapsedTime = clock.getElapsedTime();
-    
-    if (instancedMesh) {
-        for (let i = 0; i < COUNT; i++) {
-            instancedMesh.getMatrixAt(i, tempMatrix);
-            tempPosition.setFromMatrixPosition(tempMatrix);
-            
-            // Update position (z-axis movement with deceleration)
-            if (tempPosition.z > 10) {
-                tempPosition.z = -10;
-            } else {
-                // Smoothly decelerate to a minimum speed instead of stopping
-                const minSpeed = 0.5;
-                const maxSpeed = 10.0;
-                const decayFactor = 0.5;
-                const velocity = minSpeed + (maxSpeed - minSpeed) * Math.exp(-decayFactor * elapsedTime);
-                tempPosition.z += velocity * 0.016;
-            }
-            
-            // Update scale (warp effect + perspective size)
-            const maxScale = 15;
-            const minScale = 1;
-            const decayFactor = 0.5;
-            const scaleZ = minScale + (maxScale - minScale) * Math.exp(-decayFactor * elapsedTime);
-            
-            // Make stars smaller as they get closer (perspective effect)
-            const distanceScale = Math.max(0.3, 1 - (tempPosition.z + 10) / 20);
-            tempObject.scale.set(distanceScale, distanceScale, scaleZ);
-            tempObject.position.copy(tempPosition);
-            tempObject.updateMatrix();
-            
-            instancedMesh.setMatrixAt(i, tempObject.matrix);
-            
-            // Update color with early fade (CHANGED)
-            // Start fading much earlier - at z=3 instead of z=0
-            const fadeStartZ = 3;
-            const fadeEndZ = 8;
-            
-            if (tempPosition.z < fadeStartZ) {
-                // Full brightness when far away
-                tempColor.setRGB(1.2, 1.2, 1.5);
-            } else if (tempPosition.z >= fadeEndZ) {
-                // Completely invisible at edges
-                tempColor.setRGB(0, 0, 0);
-            } else {
-                // Fade from full brightness to invisible
-                const fadeProgress = (tempPosition.z - fadeStartZ) / (fadeEndZ - fadeStartZ);
-                const brightness = (1 - fadeProgress);
-                tempColor.setRGB(brightness * 1.2, brightness * 1.2, brightness * 1.5);
-            }
-            
-            instancedMesh.setColorAt(i, tempColor);
-        }
+    if (warpAnimationEnabled && experienceStarted) {
+        const elapsedTime = clock.getElapsedTime();
         
-        instancedMesh.instanceMatrix.needsUpdate = true;
-        if (instancedMesh.instanceColor) {
-            instancedMesh.instanceColor.needsUpdate = true;
+        if (instancedMesh) {
+            for (let i = 0; i < COUNT; i++) {
+                instancedMesh.getMatrixAt(i, tempMatrix);
+                tempPosition.setFromMatrixPosition(tempMatrix);
+                
+                if (tempPosition.z > 10) {
+                    tempPosition.z = -10;
+                } else {
+                    const minSpeed = 0.5;
+                    const maxSpeed = 10.0;
+                    const decayFactor = 0.5;
+                    const velocity = minSpeed + (maxSpeed - minSpeed) * Math.exp(-decayFactor * elapsedTime);
+                    tempPosition.z += velocity * 0.016;
+                }
+                
+                const maxScale = 15;
+                const minScale = 1;
+                const decayFactor = 0.5;
+                const scaleZ = minScale + (maxScale - minScale) * Math.exp(-decayFactor * elapsedTime);
+                
+                const distanceScale = Math.max(0.3, 1 - (tempPosition.z + 10) / 20);
+                tempObject.scale.set(distanceScale, distanceScale, scaleZ);
+                tempObject.position.copy(tempPosition);
+                tempObject.updateMatrix();
+                
+                instancedMesh.setMatrixAt(i, tempObject.matrix);
+                
+                const fadeStartZ = 3;
+                const fadeEndZ = 8;
+                
+                if (tempPosition.z < fadeStartZ) {
+                    tempColor.setRGB(1.2, 1.2, 1.5);
+                } else if (tempPosition.z >= fadeEndZ) {
+                    tempColor.setRGB(0, 0, 0);
+                } else {
+                    const fadeProgress = (tempPosition.z - fadeStartZ) / (fadeEndZ - fadeStartZ);
+                    const brightness = (1 - fadeProgress);
+                    tempColor.setRGB(brightness * 1.2, brightness * 1.2, brightness * 1.5);
+                }
+                
+                instancedMesh.setColorAt(i, tempColor);
+            }
+            
+            instancedMesh.instanceMatrix.needsUpdate = true;
+            if (instancedMesh.instanceColor) {
+                instancedMesh.instanceColor.needsUpdate = true;
+            }
         }
     }
     
     warpRenderer.render(warpScene, warpCamera);
 
-    // Animate main scene
     hoverableObjects.forEach((obj) => {
         if (obj.material && obj.material.color && obj.targetColor) {
             obj.material.color.lerp(obj.targetColor, 0.1);
