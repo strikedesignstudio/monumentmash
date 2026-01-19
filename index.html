@@ -598,14 +598,24 @@ function animate() {
             
             instancedMesh.setMatrixAt(i, tempObject.matrix);
             
-            // Update color (fade effect with glow)
-            if (tempPosition.z > 0) {
+            // Update color with early fade (CHANGED)
+            // Start fading much earlier - at z=3 instead of z=0
+            const fadeStartZ = 3;
+            const fadeEndZ = 8;
+            
+            if (tempPosition.z < fadeStartZ) {
+                // Full brightness when far away
                 tempColor.setRGB(1.2, 1.2, 1.5);
+            } else if (tempPosition.z >= fadeEndZ) {
+                // Completely invisible at edges
+                tempColor.setRGB(0, 0, 0);
             } else {
-                const fade = 1 - tempPosition.z / -10;
-                const dimming = fade * 0.7 + 0.3;
-                tempColor.setRGB(dimming * 1.2, dimming * 1.2, dimming * 1.5);
+                // Fade from full brightness to invisible
+                const fadeProgress = (tempPosition.z - fadeStartZ) / (fadeEndZ - fadeStartZ);
+                const brightness = (1 - fadeProgress);
+                tempColor.setRGB(brightness * 1.2, brightness * 1.2, brightness * 1.5);
             }
+            
             instancedMesh.setColorAt(i, tempColor);
         }
         
