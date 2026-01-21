@@ -643,14 +643,6 @@ sceneLayer.addEventListener("mousemove", onMouseMove);
 // --- LOAD GLTF MODEL ---
 const loader = new THREE.GLTFLoader();
 
-// Set up DRACOLoader for compressed models
-if (THREE.DRACOLoader) {
-    const dracoLoader = new THREE.DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
-    dracoLoader.setDecoderConfig({ type: 'js' });
-    loader.setDRACOLoader(dracoLoader);
-}
-
 loader.load(
     'model/modelfull2.glb',
     function (gltf) {
