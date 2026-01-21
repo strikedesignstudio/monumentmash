@@ -452,7 +452,7 @@ sceneLayer.appendChild(mainRenderer.domElement);
 
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
-const rotationSpeed = 0.005;
+const rotationSpeed = 0.01;
 
 sceneLayer.addEventListener('mousedown', (e) => {
     isDragging = true;
@@ -478,7 +478,7 @@ sceneLayer.addEventListener('mouseup', () => {
 sceneLayer.addEventListener('wheel', (e) => {
     e.preventDefault();
     mainCamera.position.z += e.deltaY * 0.01;
-    mainCamera.position.z = Math.max(1, Math.min(mainCamera.position.z, 20));
+    mainCamera.position.z = Math.max(0.5, Math.min(mainCamera.position.z, 20));
 });
 
 // --- LIGHTS ---
