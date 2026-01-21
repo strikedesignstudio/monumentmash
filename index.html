@@ -345,11 +345,12 @@ function startExperience() {
         loadedModel.userData.animationStartTime = performance.now();
     }
     
+    // Only show play button and start audio if audio is loaded
     if (audioBufferShared) {
+        playPauseBtn.classList.add('visible');
         playFrom(0);
         isPlaying = true;
         playPauseBtn.innerHTML = '⏸';
-        playPauseBtn.classList.add('visible');
     }
 }
 
