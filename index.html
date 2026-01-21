@@ -340,6 +340,11 @@ function startExperience() {
     warpAnimationEnabled = true;
     loadingScreen.classList.add('hidden');
     
+    // Initialize model animation start time
+    if (loadedModel) {
+        loadedModel.userData.animationStartTime = performance.now();
+    }
+    
     if (audioBufferShared) {
         playFrom(0);
         isPlaying = true;
@@ -496,6 +501,7 @@ const clickableObjects = [];
 const hoverableObjects = [];
 const warpingMeshes = [];
 let INTERSECTED;
+let loadedModel = null;
 
 // --- AUDIO SETUP ---
 const listener = new THREE.AudioListener();
@@ -654,19 +660,18 @@ loader.load(
             return;
         }
         const model = gltf.scene;
+        loadedModel = model;
+        
         model.scale.set(0.026, 0.026, 0.026);
-
+        
         // Start position (zoomed out)
         model.position.set(0, -2.5, -50);
-
-
-
+        
         // Store final position and animation state
         model.userData.finalPosition = new THREE.Vector3(0, -2.5, -5);
         model.userData.startPosition = new THREE.Vector3(0, -2.5, -50);
         model.userData.animationStartTime = null;
-        model.userData.animationDuration = 5; // 5 seconds
-
+        model.userData.animationDuration = 5000; // 5 seconds in milliseconds
         
         const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
         const toRemove = [];
@@ -751,6 +756,28 @@ window.addEventListener("resize", function () {
 // --- ANIMATE LOOP ---
 function animate() {
     requestAnimationFrame(animate);
+
+    // Animate model zoom-in during first 5 seconds
+    if (experienceStarted && loadedModel && loadedModel.userData.animationStartTime) {
+        const elapsed = performance.now() - loadedModel.userData.animationStartTime;
+        const progress = Math.min(elapsed / loadedModel.userData.animationDuration, 1);
+        
+        // Easing function for smooth animation (ease-out cubic)
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        
+        // Interpolate position
+        loadedModel.position.lerpVectors(
+            loadedModel.userData.startPosition,
+            loadedModel.userData.finalPosition,
+            easeProgress
+        );
+        
+        // Stop animation after completion
+        if (progress >= 1) {
+            loadedModel.userData.animationStartTime = null;
+            loadedModel.position.copy(loadedModel.userData.finalPosition);
+        }
+    }
 
     if (warpAnimationEnabled && experienceStarted) {
         const elapsedTime = clock.getElapsedTime();
