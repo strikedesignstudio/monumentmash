@@ -655,7 +655,19 @@ loader.load(
         }
         const model = gltf.scene;
         model.scale.set(0.026, 0.026, 0.026);
-        model.position.set(0, -2.5, -5);
+
+        // Start position (zoomed out)
+        model.position.set(0, -2.5, -50);
+
+
+
+        // Store final position and animation state
+        model.userData.finalPosition = new THREE.Vector3(0, -2.5, -5);
+        model.userData.startPosition = new THREE.Vector3(0, -2.5, -50);
+        model.userData.animationStartTime = null;
+        model.userData.animationDuration = 5; // 5 seconds
+
+        
         const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
         const toRemove = [];
         
