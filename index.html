@@ -236,67 +236,74 @@
             transform: rotate(90deg);
         }
 
-        .mesh-popup {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .mesh-popup-content {
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 500px;
-            width: 90%;
-            position: relative;
-            color: white;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-        }
-        
-        .mesh-popup-close {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 30px;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-        
-        .mesh-popup-close:hover {
-            color: #ff6b6b;
-        }
-        
-        .mesh-popup h2 {
-            margin: 0 0 15px 0;
-            font-size: 24px;
-            color: #4d96ff;
-        }
-        
-        .mesh-popup p {
-            margin: 0;
-            line-height: 1.6;
-            font-size: 16px;
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
+/* Mesh Popup Styles */
+.mesh-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.mesh-popup.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mesh-popup-content {
+    background: #1a1a1a;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    color: white;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.mesh-popup.active .mesh-popup-content {
+    transform: scale(1);
+}
+
+.mesh-popup-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    transition: color 0.3s;
+    padding: 0;
+    line-height: 1;
+}
+
+.mesh-popup-close:hover {
+    color: #ff6b6b;
+}
+
+.mesh-popup-title {
+    margin: 0 0 15px 0;
+    font-size: 24px;
+    color: #4d96ff;
+}
+
+.mesh-popup-description {
+    margin: 0;
+    line-height: 1.6;
+    font-size: 16px;
+}
 
     </style>
 
@@ -321,6 +328,15 @@
     <img class="clouds-overlay" src="cloudtop.gif" onerror="this.style.display='none'">
     <button id="play-pause-btn">▶</button>
     <button id="about-page-btn">Info</button>
+
+    <!-- Mesh Info Popup -->
+<div id="mesh-popup" class="mesh-popup">
+    <div class="mesh-popup-content">
+        <button id="mesh-popup-close" class="mesh-popup-close">&times;</button>
+        <h2 class="mesh-popup-title">Title</h2>
+        <p class="mesh-popup-description">Description</p>
+    </div>
+</div>
     
     <div class="aboutpage">
         <div class="aboutpage-content">
