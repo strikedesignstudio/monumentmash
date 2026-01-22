@@ -230,6 +230,69 @@
             background: rgba(255, 255, 255, 0.2);
             transform: rotate(90deg);
         }
+
+        .mesh-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .mesh-popup-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            color: white;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .mesh-popup-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .mesh-popup-close:hover {
+            color: #ff6b6b;
+        }
+        
+        .mesh-popup h2 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+            color: #4d96ff;
+        }
+        
+        .mesh-popup p {
+            margin: 0;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
     </style>
 
 </head>
@@ -569,6 +632,57 @@ const audioSegments = {
     "Dominic": 617
 };
 
+const meshInfo = {
+    "Hilmi": {
+        title: "Hilmi",
+        description: "Information about Hilmi's contribution to the project."
+    },
+    "Anon": {
+        title: "Anon",
+        description: "Information about Anon's contribution to the project."
+    },
+    "Henry": {
+        title: "Henry",
+        description: "Information about Henry's contribution to the project."
+    },
+    "Sabir": {
+        title: "Sabir",
+        description: "Information about Sabir's contribution to the project."
+    },
+    "Shemi": {
+        title: "Shemi",
+        description: "Information about Shemi's contribution to the project."
+    },
+    "Hannah": {
+        title: "Hannah",
+        description: "Information about Hannah's contribution to the project."
+    },
+    "Evodie": {
+        title: "Evodie",
+        description: "Information about Evodie's contribution to the project."
+    },
+    "Marvin": {
+        title: "Marvin",
+        description: "Information about Marvin's contribution to the project."
+    },
+    "Jessica": {
+        title: "Jessica",
+        description: "Information about Jessica's contribution to the project."
+    },
+    "Rachid": {
+        title: "Rachid",
+        description: "Information about Rachid's contribution to the project."
+    },
+    "Jermaine": {
+        title: "Jermaine",
+        description: "Information about Jermaine's contribution to the project."
+    },
+    "Dominic": {
+        title: "Dominic",
+        description: "Information about Dominic's contribution to the project."
+    }
+};
+
 const hoverColorMap = {
     "Hilmi": 0xff0000,
     "Anon": 0x00ff00,
@@ -638,6 +752,46 @@ function togglePlayPause() {
 
 playPauseBtn.addEventListener('click', togglePlayPause);
 
+// --- POPUP FUNCTIONS ---
+function showPopup(meshName) {
+    const info = meshInfo[meshName];
+    if (!info) return;
+    
+    // Create popup elements
+    const popup = document.createElement('div');
+    popup.className = 'mesh-popup';
+    popup.innerHTML = `
+        <div class="mesh-popup-content">
+            <button class="mesh-popup-close">&times;</button>
+            <h2>${info.title}</h2>
+            <p>${info.description}</p>
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
+    
+    
+    if (!document.querySelector('.mesh-popup-styles')) {
+        style.className = 'mesh-popup-styles';
+        document.head.appendChild(style);
+    }
+    
+    // Close button handler
+    const closeBtn = popup.querySelector('.mesh-popup-close');
+    closeBtn.addEventListener('click', () => {
+        popup.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => popup.remove(), 300);
+    });
+    
+    // Click outside to close
+    popup.addEventListener('click', (e) => {
+        if (e.target === popup) {
+            popup.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => popup.remove(), 300);
+        }
+    });
+}
+
 function onClick(event) {
     const rect = sceneLayer.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -652,6 +806,12 @@ function onClick(event) {
             clicked.material.opacity = 0.6;
             setTimeout(() => (clicked.material.opacity = 1), 300);
         }
+        
+        // Show popup if mesh has info
+        if (meshInfo[clicked.name]) {
+            showPopup(clicked.name);
+        }
+        
         const segmentStart = audioSegments[clicked.name];
         if (segmentStart !== undefined) {
             playFrom(segmentStart);
