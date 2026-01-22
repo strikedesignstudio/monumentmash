@@ -778,40 +778,48 @@ function showPopup(meshName) {
     const info = meshInfo[meshName];
     if (!info) return;
     
-    // Create popup elements
-    const popup = document.createElement('div');
-    popup.className = 'mesh-popup';
-    popup.innerHTML = `
-        <div class="mesh-popup-content">
-            <button class="mesh-popup-close">&times;</button>
-            <h2>${info.title}</h2>
-            <p>${info.description}</p>
-        </div>
-    `;
-    
-    document.body.appendChild(popup);
-    
-    
-    if (!document.querySelector('.mesh-popup-styles')) {
-        style.className = 'mesh-popup-styles';
-        document.head.appendChild(style);
+    // Get or create popup element
+    let popup = document.getElementById('mesh-popup');
+    if (!popup) {
+        console.error('Popup element not found in HTML');
+        return;
     }
     
-    // Close button handler
-    const closeBtn = popup.querySelector('.mesh-popup-close');
-    closeBtn.addEventListener('click', () => {
-        popup.style.animation = 'fadeOut 0.3s ease';
-        setTimeout(() => popup.remove(), 300);
-    });
+    // Update popup content
+    const title = popup.querySelector('.mesh-popup-title');
+    const description = popup.querySelector('.mesh-popup-description');
     
-    // Click outside to close
-    popup.addEventListener('click', (e) => {
-        if (e.target === popup) {
-            popup.style.animation = 'fadeOut 0.3s ease';
-            setTimeout(() => popup.remove(), 300);
-        }
-    });
+    if (title) title.textContent = info.title;
+    if (description) description.textContent = info.description;
+    
+    // Show popup
+    popup.classList.add('active');
 }
+
+function closePopup() {
+    const popup = document.getElementById('mesh-popup');
+    if (popup) {
+        popup.classList.remove('active');
+    }
+}
+
+// Setup popup close handlers when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    const popup = document.getElementById('mesh-popup');
+    const closeBtn = document.getElementById('mesh-popup-close');
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closePopup);
+    }
+    
+    if (popup) {
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                closePopup();
+            }
+        });
+    }
+});
 
 function onClick(event) {
     const rect = sceneLayer.getBoundingClientRect();
