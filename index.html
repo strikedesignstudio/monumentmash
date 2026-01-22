@@ -462,6 +462,7 @@ let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const rotationSpeed = 0.01;
 
+// Mouse events
 sceneLayer.addEventListener('mousedown', (e) => {
     isDragging = true;
     previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -480,6 +481,37 @@ sceneLayer.addEventListener('mousemove', (e) => {
 });
 
 sceneLayer.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
+// Touch events for mobile
+sceneLayer.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+        isDragging = true;
+        previousMousePosition = { 
+            x: e.touches[0].clientX, 
+            y: e.touches[0].clientY 
+        };
+    }
+});
+
+sceneLayer.addEventListener('touchmove', (e) => {
+    if (isDragging && e.touches.length === 1) {
+        e.preventDefault();
+        const deltaX = e.touches[0].clientX - previousMousePosition.x;
+        const deltaY = e.touches[0].clientY - previousMousePosition.y;
+        
+        mainCamera.position.x += deltaX * rotationSpeed;
+        mainCamera.position.y -= deltaY * rotationSpeed;
+        
+        previousMousePosition = { 
+            x: e.touches[0].clientX, 
+            y: e.touches[0].clientY 
+        };
+    }
+}, { passive: false });
+
+sceneLayer.addEventListener('touchend', () => {
     isDragging = false;
 });
 
