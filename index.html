@@ -335,7 +335,7 @@ function updateLoadingBar() {
     }
 }
 
-function startExperience() {
+async function startExperience() {
     experienceStarted = true;
     warpAnimationEnabled = true;
     loadingScreen.classList.add('hidden');
@@ -348,6 +348,12 @@ function startExperience() {
     // Only show play button and start audio if audio is loaded
     if (audioBufferShared) {
         playPauseBtn.classList.add('visible');
+        
+        // Resume audio context if suspended (required by browser autoplay policy)
+        if (listener.context.state === 'suspended') {
+            await listener.context.resume();
+        }
+        
         playFrom(0);
         isPlaying = true;
         playPauseBtn.innerHTML = '⏸';
