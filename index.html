@@ -709,56 +709,8 @@ const audioSegments = {
     "Dominic": 617
 };
 
-const meshInfo = {
-    "Hilmi": {
-        title: "Hilmi",
-        description: "Information about Hilmi's contribution to the project."
-    },
-    "Anon": {
-        title: "Anon",
-        description: "Information about Anon's contribution to the project."
-    },
-    "Henry": {
-        title: "Henry",
-        description: "Information about Henry's contribution to the project."
-    },
-    "Sabir": {
-        title: "Sabir",
-        description: "Information about Sabir's contribution to the project."
-    },
-    "Shemi": {
-        title: "Shemi",
-        description: "Information about Shemi's contribution to the project."
-    },
-    "Hannah": {
-        title: "Hannah",
-        description: "Information about Hannah's contribution to the project."
-    },
-    "Evodie": {
-        title: "Evodie",
-        description: "Information about Evodie's contribution to the project."
-    },
-    "Marvin": {
-        title: "Marvin",
-        description: "Information about Marvin's contribution to the project."
-    },
-    "Jessica": {
-        title: "Jessica",
-        description: "Information about Jessica's contribution to the project."
-    },
-    "Rachid": {
-        title: "Rachid",
-        description: "Information about Rachid's contribution to the project."
-    },
-    "Jermaine": {
-        title: "Jermaine",
-        description: "Information about Jermaine's contribution to the project."
-    },
-    "Dominic": {
-        title: "Dominic",
-        description: "Information about Dominic's contribution to the project."
-    }
-};
+// meshInfo will be loaded from HTML data attributes
+let meshInfo = {};
 
 const hoverColorMap = {
     "Hilmi": 0xff0000,
@@ -861,6 +813,18 @@ function closePopup() {
 
 // Setup popup close handlers when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    // Load mesh info from HTML
+    const meshInfoElements = document.querySelectorAll('.mesh-info-item');
+    meshInfoElements.forEach(item => {
+        const name = item.getAttribute('data-name');
+        const title = item.getAttribute('data-title');
+        const description = item.getAttribute('data-description');
+        
+        if (name && title && description) {
+            meshInfo[name] = { title, description };
+        }
+    });
+    
     const popup = document.getElementById('mesh-popup');
     const closeBtn = document.getElementById('mesh-popup-close');
     
