@@ -736,6 +736,18 @@ const hoverColorMap = {
 
 const playPauseBtn = document.getElementById('play-pause-btn');
 
+// --- MONUMENT COUNTER ---
+const visitedMonuments = new Set();
+const monumentCounter = document.getElementById('monument-counter');
+
+function updateMonumentCounter() {
+    const total = Object.keys(audioSegments).length;
+    const visited = visitedMonuments.size;
+    if (monumentCounter) {
+        monumentCounter.textContent = `Congratulations! You have visited ${visited}/${total} monuments.`;
+        monumentCounter.style.opacity = visited > 0 ? '1' : '0';
+    }
+
 audioLoader.load('audio/monmashcompnew.mp3', function (buffer) {
     audioBufferShared = buffer;
     loadingProgress.audio = 100;
