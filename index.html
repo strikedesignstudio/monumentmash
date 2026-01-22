@@ -690,6 +690,9 @@ const hoverableObjects = [];
 const warpingMeshes = [];
 let INTERSECTED;
 let loadedModel = null;
+let isModelShifted = false;
+let targetModelPosition = new THREE.Vector3(0, -2.5, -5);
+let originalModelPosition = new THREE.Vector3(0, -2.5, -5);
 
 // --- AUDIO SETUP ---
 const listener = new THREE.AudioListener();
@@ -747,6 +750,43 @@ function updateMonumentCounter() {
         monumentCounter.textContent = `Congratulations! You have visited ${visited}/${total} monuments.`;
         monumentCounter.style.opacity = visited > 0 ? '1' : '0';
     }
+}
+
+// --- MODEL SHIFT FUNCTIONS ---
+function isMobileDevice() {
+    return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function shiftModelForPopup() {
+    if (!loadedModel || isModelShifted) return;
+    
+    isModelShifted = true;
+    const isMobile = isMobileDevice();
+    
+    if (isMobile) {
+        // Move 25% up on mobile
+        const shiftAmount = window.innerHeight * 0.0025; // Adjust multiplier for desired effect
+        targetModelPosition.set(
+            originalModelPosition.x,
+            originalModelPosition.y + shiftAmount,
+            originalModelPosition.z
+        );
+    } else {
+        // Move 25% left on desktop
+        const shiftAmount = window.innerWidth * 0.003; // Adjust multiplier for desired effect
+        targetModelPosition.set(
+            originalModelPosition.x - shiftAmount,
+            originalModelPosition.y,
+            originalModelPosition.z
+        );
+    }
+}
+
+function resetModelPosition() {
+    if (!loadedModel || !isModelShifted) return;
+    
+    isModelShifted = false;
+    targetModelPosition.copy(originalModelPosition);
 }
 
 audioLoader.load('audio/monmashcompnew.mp3', function (buffer) {
@@ -820,8 +860,9 @@ function showPopup(meshName) {
     if (title) title.textContent = info.title;
     if (description) description.textContent = info.description;
     
-    // Show popup
+    // Show popup and shift model
     popup.classList.add('active');
+    shiftModelForPopup();
 }
 
 function closePopup() {
@@ -829,6 +870,8 @@ function closePopup() {
     if (popup) {
         popup.classList.remove('active');
     }
+    // Reset model position when popup closes
+    resetModelPosition();
 }
 
 // Setup popup close handlers when DOM is ready
@@ -949,6 +992,10 @@ loader.load(
         model.userData.animationStartTime = null;
         model.userData.animationDuration = 5000; // 5 seconds in milliseconds
         
+        // Set original position for shifting
+        originalModelPosition.set(0, -2.5, -5);
+        targetModelPosition.set(0, -2.5, -5);
+        
         const meshesToRemove = ["Mesh040", "Final_Model_bottom_to_building"];
         const toRemove = [];
         
@@ -1052,7 +1099,14 @@ function animate() {
         if (progress >= 1) {
             loadedModel.userData.animationStartTime = null;
             loadedModel.position.copy(loadedModel.userData.finalPosition);
+            originalModelPosition.copy(loadedModel.userData.finalPosition);
+            targetModelPosition.copy(loadedModel.userData.finalPosition);
         }
+    }
+    
+    // Smooth model position shift for popup
+    if (loadedModel && !loadedModel.userData.animationStartTime) {
+        loadedModel.position.lerp(targetModelPosition, 0.1);
     }
 
     if (warpAnimationEnabled && experienceStarted) {
