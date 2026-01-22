@@ -747,6 +747,7 @@ function updateMonumentCounter() {
         monumentCounter.textContent = `Congratulations! You have visited ${visited}/${total} monuments.`;
         monumentCounter.style.opacity = visited > 0 ? '1' : '0';
     }
+}
 
 audioLoader.load('audio/monmashcompnew.mp3', function (buffer) {
     audioBufferShared = buffer;
@@ -873,6 +874,12 @@ function onClick(event) {
         if (clicked.material && clicked.material.opacity !== undefined) {
             clicked.material.opacity = 0.6;
             setTimeout(() => (clicked.material.opacity = 1), 300);
+        }
+        
+        // Track visited monuments
+        if (audioSegments[clicked.name] !== undefined) {
+            visitedMonuments.add(clicked.name);
+            updateMonumentCounter();
         }
         
         // Show popup if mesh has info
