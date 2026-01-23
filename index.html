@@ -529,18 +529,31 @@ async function startExperience() {
         loadedModel.userData.animationStartTime = performance.now();
     }
     
-    // Only show play button and start audio if audio is loaded
-    if (audioBufferShared) {
-        playPauseBtn.classList.add('visible');
-        
+    // Always show play button and initialize monument counter
+    playPauseBtn.classList.add('visible');
+    updateMonumentCounter();
+    
+    // Try to start audio regardless of whether it's loaded
+    try {
         // Resume audio context if suspended (required by browser autoplay policy)
         if (listener.context.state === 'suspended') {
             await listener.context.resume();
         }
         
-        playFrom(0);
-        isPlaying = true;
-        playPauseBtn.innerHTML = '⏸';
+        // If audio is already loaded, play it
+        if (audioBufferShared) {
+            playFrom(0);
+            isPlaying = true;
+            playPauseBtn.innerHTML = '⏸';
+        } else {
+            // Audio not loaded yet, but button is ready for when it loads
+            isPlaying = false;
+            playPauseBtn.innerHTML = '▶';
+        }
+    } catch (error) {
+        console.error('Error starting audio:', error);
+        isPlaying = false;
+        playPauseBtn.innerHTML = '▶';
     }
 }
 
@@ -824,10 +837,18 @@ function resetModelPosition() {
     targetModelPosition.copy(originalModelPosition);
 }
 
+// Modified audio loader with callback to start playback if experience already started
 audioLoader.load('audio/monmashcompnew.mp3', function (buffer) {
     audioBufferShared = buffer;
     loadingProgress.audio = 100;
     updateLoadingBar();
+    
+    // If experience has already started, auto-play the audio
+    if (experienceStarted && !isPlaying) {
+        playFrom(0);
+        isPlaying = true;
+        playPauseBtn.innerHTML = '⏸';
+    }
 }, function(xhr) {
     if (xhr.total) {
         loadingProgress.audio = (xhr.loaded / xhr.total) * 100;
@@ -858,7 +879,10 @@ function playFrom(startTime) {
 }
 
 function togglePlayPause() {
-    if (!audioBufferShared) return;
+    if (!audioBufferShared) {
+        console.log('Audio not loaded yet');
+        return;
+    }
     
     const audioCtx = listener.context;
     
