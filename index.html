@@ -309,6 +309,20 @@
     font-size: 1em;
 }
 
+.monument-counter {
+    position: fixed; 
+    bottom: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    color: white; 
+    font-size: 20px; 
+    font-family: breakpoint, sans-serif; 
+    padding: 10px 20px;
+    opacity: 0; 
+    transition: opacity 0.3s; 
+    z-index: 1000;
+}
+
     </style>
 
 </head>
@@ -338,7 +352,7 @@
     <button id="play-pause-btn">▶</button>
     <button id="about-page-btn">Info</button>
 
-<div id="monument-counter" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 18px; font-family: Arial, sans-serif; background: rgba(0, 0, 0, 0.7); padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity 0.3s; z-index: 1000;">
+<div id="monument-counter">
     Congratulations! You have visited 0/12 monuments.
 </div>
 
