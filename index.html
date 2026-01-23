@@ -915,6 +915,126 @@ function togglePlayPause() {
 
 playPauseBtn.addEventListener('click', togglePlayPause);
 
+// --- TABLE MODEL LOADER ---
+let tableScene = null;
+let tableCamera = null;
+let tableRenderer = null;
+let tableModel = null;
+let tableAnimationId = null;
+
+function initTableModel(meshName) {
+    const tableContainer = document.getElementById('table-model');
+    if (!tableContainer) {
+        console.error('table-model div not found');
+        return;
+    }
+    
+    // Clear previous model if exists
+    if (tableRenderer) {
+        cancelAnimationFrame(tableAnimationId);
+        tableContainer.removeChild(tableRenderer.domElement);
+        if (tableModel) {
+            tableScene.remove(tableModel);
+            tableModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach((m) => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+            });
+        }
+        tableRenderer.dispose();
+    }
+    
+    // Setup new scene
+    tableScene = new THREE.Scene();
+    tableScene.background = new THREE.Color(0x1a1a1a);
+    
+    const width = tableContainer.clientWidth;
+    const height = tableContainer.clientHeight;
+    
+    tableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+    tableCamera.position.set(0, 2, 5);
+    
+    tableRenderer = new THREE.WebGLRenderer({ antialias: true });
+    tableRenderer.setSize(width, height);
+    tableRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    tableContainer.appendChild(tableRenderer.domElement);
+    
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    tableScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7.5);
+    tableScene.add(directionalLight);
+    
+    // Load the specific model for this mesh
+    const modelPath = `model/${meshName}.glb`; // Assumes models are named after meshes
+    const tableLoader = new THREE.GLTFLoader();
+    
+    tableLoader.load(
+        modelPath,
+        function (gltf) {
+            tableModel = gltf.scene;
+            
+            // Auto-scale and center the model
+            const box = new THREE.Box3().setFromObject(tableModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 3 / maxDim;
+            tableModel.scale.multiplyScalar(scale);
+            
+            tableModel.position.x = -center.x * scale;
+            tableModel.position.y = -center.y * scale;
+            tableModel.position.z = -center.z * scale;
+            
+            tableScene.add(tableModel);
+            animateTableModel();
+        },
+        function (xhr) {
+            console.log(`Loading table model... ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
+        },
+        function (error) {
+            console.error('Error loading table model:', error);
+            // Fallback: try loading a default model
+            console.log('Attempting to load default model...');
+        }
+    );
+}
+
+function animateTableModel() {
+    tableAnimationId = requestAnimationFrame(animateTableModel);
+    
+    if (tableModel) {
+        tableModel.rotation.y += 0.005;
+    }
+    
+    tableRenderer.render(tableScene, tableCamera);
+}
+
+// Handle window resize for table model
+window.addEventListener('resize', function() {
+    if (tableRenderer && tableCamera) {
+        const tableContainer = document.getElementById('table-model');
+        if (tableContainer) {
+            const width = tableContainer.clientWidth;
+            const height = tableContainer.clientHeight;
+            
+            tableCamera.aspect = width / height;
+            tableCamera.updateProjectionMatrix();
+            tableRenderer.setSize(width, height);
+        }
+    }
+});
+
 // --- POPUP FUNCTIONS ---
 function showPopup(meshName) {
     const info = meshInfo[meshName];
@@ -934,6 +1054,9 @@ function showPopup(meshName) {
     if (title) title.textContent = info.title;
     if (description) description.textContent = info.description;
     
+    // Load the corresponding 3D model into table-model div
+    initTableModel(meshName);
+    
     // Show popup and shift model
     popup.classList.add('active');
     shiftModelForPopup();
@@ -944,6 +1067,36 @@ function closePopup() {
     if (popup) {
         popup.classList.remove('active');
     }
+    
+    // Clean up table model
+    if (tableRenderer) {
+        cancelAnimationFrame(tableAnimationId);
+        const tableContainer = document.getElementById('table-model');
+        if (tableContainer && tableRenderer.domElement.parentNode === tableContainer) {
+            tableContainer.removeChild(tableRenderer.domElement);
+        }
+        if (tableModel) {
+            tableScene.remove(tableModel);
+            tableModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach((m) => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+            });
+        }
+        tableRenderer.dispose();
+        tableRenderer = null;
+        tableModel = null;
+        tableScene = null;
+        tableCamera = null;
+    }
+    
     // Reset model position when popup closes
     resetModelPosition();
 }
