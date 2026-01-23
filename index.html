@@ -39,7 +39,7 @@
         .clouds-overlay {
             z-index: 10;
             opacity: .3;
-            filter: blur(20px);
+            filter: blur(20px) invert(5);
             pointer-events: none;
             object-fit: cover;
             width: 100%;
@@ -47,7 +47,6 @@
             position: fixed;
             top: 0;
             left: 0;
-            filter: invert(0);
         }
         #warp-canvas {
             position: fixed;
