@@ -492,8 +492,19 @@ function updateLoadingBar() {
     loadingText.textContent = `Loading... ${Math.round(totalProgress)}%`;
     
     if (totalProgress >= 100) {
-        loadingText.textContent = 'Ready to start!';
-        startBtn.classList.add('visible');
+        // Fade out loading bar and text
+        loadingBar.style.transition = 'opacity 0.5s ease-out';
+        loadingText.style.transition = 'opacity 0.5s ease-out';
+        loadingBar.style.opacity = '0';
+        loadingText.style.opacity = '0';
+        
+        // After fade out completes, show the button
+        setTimeout(() => {
+            loadingBar.style.display = 'none';
+            loadingText.style.display = 'none';
+            startBtn.style.transition = 'opacity 0.5s ease-in';
+            startBtn.classList.add('visible');
+        }, 500); // Match the fade-out duration
     }
 }
 
