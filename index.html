@@ -183,11 +183,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.6);
             z-index: 30;
             display: none;
-            align-items: center;
-            justify-content: center;
             padding: 0 20px;
             backdrop-filter: blur(20px);
         }
@@ -210,21 +208,22 @@
             text-align: center;
         }
 
-        .aboutpage p {
-            color: silver;
-        }
-
         .aboutpage-content {
-            max-width: 900px;
-            max-height: 60vh;
+            max-width: 50%;
+            max-height: 100%;
+            float: right;
             overflow-y: auto;
-            color: white;
             padding: 40px;
             position: relative;
         }
+
+        .aboutpage-content p {
+            color: silver;
+        }
+
         .aboutpage-close {
             position: absolute;
-            font-family: breakpoint;
+            font-family: plexmono;
             top: 20px;
             right: 20px;
             background: none;
