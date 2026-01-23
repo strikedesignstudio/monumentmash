@@ -483,6 +483,7 @@ let loadingProgress = { model: 0, audio: 0 };
 let experienceStarted = false;
 const loadingBar = document.getElementById('loading-bar');
 const loadingText = document.getElementById('loading-text');
+const loadingBarContainer = document.getElementById('loading-bar-container');
 const startBtn = document.getElementById('start-experience-btn');
 const loadingScreen = document.getElementById('loading-screen');
 
@@ -492,15 +493,15 @@ function updateLoadingBar() {
     loadingText.textContent = `Loading... ${Math.round(totalProgress)}%`;
     
     if (totalProgress >= 100) {
-        // Fade out loading bar and text
-        loadingBar.style.transition = 'opacity 0.5s ease-out';
+        // Fade out loading bar container and text
+        loadingBarContainer.style.transition = 'opacity 0.5s ease-out';
         loadingText.style.transition = 'opacity 0.5s ease-out';
-        loadingBar.style.opacity = '0';
+        loadingBarContainer.style.opacity = '0';
         loadingText.style.opacity = '0';
         
         // After fade out completes, show the button
         setTimeout(() => {
-            loadingBar.style.display = 'none';
+            loadingBarContainer.style.display = 'none';
             loadingText.style.display = 'none';
             startBtn.style.transition = 'opacity 0.5s ease-in';
             startBtn.classList.add('visible');
