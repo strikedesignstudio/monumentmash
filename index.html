@@ -954,18 +954,7 @@ function initTableModel(meshName) {
         tableContainer.removeChild(tableRenderer.domElement);
         if (tableModel) {
             tableScene.remove(tableModel);
-            tableModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.geometry.dispose();
-                    if (child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach((m) => m.dispose());
-                        } else {
-                            child.material.dispose();
-                        }
-                    }
-                }
-            });
+            // Don't dispose geometry/materials since we're cloning
         }
         tableRenderer.dispose();
     }
@@ -993,66 +982,47 @@ function initTableModel(meshName) {
     directionalLight.position.set(5, 10, 7.5);
     tableScene.add(directionalLight);
     
-    // Load the specific model for this mesh
-    const modelPath = `model/${meshName}.glb`; // Assumes models are named after meshes
-    const tableLoader = new THREE.GLTFLoader();
-    
-    tableLoader.load(
-        modelPath,
-        function (gltf) {
-            tableModel = gltf.scene;
-            
-            // Auto-scale and center the model
-            const box = new THREE.Box3().setFromObject(tableModel);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3 / maxDim;
-            tableModel.scale.multiplyScalar(scale);
-            
-            tableModel.position.x = -center.x * scale;
-            tableModel.position.y = -center.y * scale;
-            tableModel.position.z = -center.z * scale;
-            
-            tableScene.add(tableModel);
-            animateTableModel();
-        },
-        function (xhr) {
-            console.log(`Loading table model... ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
-        },
-        function (error) {
-            console.error('Error loading table model:', error);
-            // Fallback: try loading a default model
-            console.log('Attempting to load default model...');
-        }
-    );
-}
-
-function animateTableModel() {
-    tableAnimationId = requestAnimationFrame(animateTableModel);
-    
-    if (tableModel) {
-        tableModel.rotation.y += 0.005;
+    // Find and clone the mesh from the main scene
+    if (!loadedModel) {
+        console.error('Main model not loaded yet');
+        return;
     }
     
-    tableRenderer.render(tableScene, tableCamera);
-}
-
-// Handle window resize for table model
-window.addEventListener('resize', function() {
-    if (tableRenderer && tableCamera) {
-        const tableContainer = document.getElementById('table-model');
-        if (tableContainer) {
-            const width = tableContainer.clientWidth;
-            const height = tableContainer.clientHeight;
-            
-            tableCamera.aspect = width / height;
-            tableCamera.updateProjectionMatrix();
-            tableRenderer.setSize(width, height);
+    let originalMesh = null;
+    loadedModel.traverse((child) => {
+        if (child.isMesh && child.name === meshName) {
+            originalMesh = child;
         }
+    });
+    
+    if (!originalMesh) {
+        console.error(`Mesh "${meshName}" not found in main model`);
+        return;
     }
-});
+    
+    // Clone the mesh (shares geometry and material, not position)
+    tableModel = originalMesh.clone();
+    
+    // Reset position and rotation
+    tableModel.position.set(0, 0, 0);
+    tableModel.rotation.set(0, 0, 0);
+    
+    // Auto-scale and center the model
+    const box = new THREE.Box3().setFromObject(tableModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 3 / maxDim;
+    tableModel.scale.set(scale, scale, scale);
+    
+    tableModel.position.x = -center.x * scale;
+    tableModel.position.y = -center.y * scale;
+    tableModel.position.z = -center.z * scale;
+    
+    tableScene.add(tableModel);
+    animateTableModel();
+}
 
 // --- POPUP FUNCTIONS ---
 function showPopup(meshName) {
