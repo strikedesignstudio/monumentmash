@@ -1031,7 +1031,7 @@ function initTableModel(meshName) {
     const height = tableContainer.clientHeight;
     
     tableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-    tableCamera.position.set(0, 2, 5);
+    tableCamera.position.set(0, 3, 5); // Moved camera up slightly to see the mesh better
     
     tableRenderer = new THREE.WebGLRenderer({ antialias: true });
     tableRenderer.setSize(width, height);
@@ -1104,11 +1104,11 @@ function initTableModel(meshName) {
     const size = box.getSize(new THREE.Vector3());
     
     const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 3 / maxDim;
+    const scale = 2 / maxDim; // Smaller scale factor for smaller mesh display
     wrapper.scale.set(scale, scale, scale);
     
-    // Center the wrapper at origin so it rotates around center
-    wrapper.position.set(0, 0, 0);
+    // Center the wrapper at origin, then move up slightly
+    wrapper.position.set(0, 0.5, 0); // Moved up by 0.5 units
     
     // Offset the mesh inside wrapper to center it
     tableModel.position.x = -center.x;
