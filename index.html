@@ -1269,6 +1269,14 @@ window.addEventListener('resize', function() {
     }
 });
 
+// Auto-load the tabletop model when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    const fullTableContainer = document.getElementById('table-model-full');
+    if (fullTableContainer) {
+        initFullTableModel('model/tabletopex.glb');
+    }
+});
+
 // --- POPUP FUNCTIONS ---
 function showPopup(meshName) {
     const info = meshInfo[meshName];
