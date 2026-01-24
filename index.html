@@ -1169,7 +1169,7 @@ function initFullTableModel(modelPath) {
     
     // If still no height, use a minimum
     if (height < 100) {
-        height = 600;
+        height = 700;
         console.warn('table-model-full has no height, using fallback of 600px');
     }
     
@@ -1205,7 +1205,7 @@ function initFullTableModel(modelPath) {
             const size = box.getSize(new THREE.Vector3());
             
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3 / maxDim;
+            const scale = 5 / maxDim;
             fullTableModel.scale.multiplyScalar(scale);
             
             fullTableModel.position.x = -center.x * scale;
