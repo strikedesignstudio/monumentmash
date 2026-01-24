@@ -1108,7 +1108,7 @@ function initTableModel(meshName) {
     wrapper.scale.set(scale, scale, scale);
     
     // Center the wrapper at origin, then move up slightly
-    wrapper.position.set(0, 1, 0); // Moved up by 0.5 units
+    wrapper.position.set(0, 0.5, 0); // Moved up by 0.5 units
     
     // Offset the mesh inside wrapper to center it
     tableModel.position.x = -center.x;
@@ -1161,7 +1161,7 @@ function initFullTableModel(modelPath) {
     
     // Setup new scene
     fullTableScene = new THREE.Scene();
-    fullTableScene.background = new THREE.Color(0x1a1a1a);
+    // Transparent background instead of solid color
     
     // Get dimensions with fallback
     let width = tableContainer.clientWidth || 800;
@@ -1169,7 +1169,7 @@ function initFullTableModel(modelPath) {
     
     // If still no height, use a minimum
     if (height < 100) {
-        height = 700;
+        height = 600;
         console.warn('table-model-full has no height, using fallback of 600px');
     }
     
@@ -1178,7 +1178,8 @@ function initFullTableModel(modelPath) {
     fullTableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
     fullTableCamera.position.set(0, 2, 5);
     
-    fullTableRenderer = new THREE.WebGLRenderer({ antialias: true });
+    fullTableRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    fullTableRenderer.setClearColor(0x000000, 0); // Transparent background
     fullTableRenderer.setSize(width, height);
     fullTableRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     tableContainer.appendChild(fullTableRenderer.domElement);
@@ -1205,7 +1206,7 @@ function initFullTableModel(modelPath) {
             const size = box.getSize(new THREE.Vector3());
             
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 5 / maxDim;
+            const scale = 3 / maxDim;
             fullTableModel.scale.multiplyScalar(scale);
             
             fullTableModel.position.x = -center.x * scale;
