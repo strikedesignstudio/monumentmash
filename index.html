@@ -1113,6 +1113,9 @@ function initTableModel(meshName) {
     tableModel.rotation.set(0, 0, 0);
     tableModel.scale.set(1, 1, 1);
     
+    // Rotate 90 degrees on X axis (Math.PI / 2 radians = 90 degrees)
+    wrapper.rotation.x = Math.PI / 2;
+    
     // Auto-scale and center the wrapper
     const box = new THREE.Box3().setFromObject(wrapper);
     const center = box.getCenter(new THREE.Vector3());
@@ -1142,7 +1145,10 @@ function initTableModel(meshName) {
         scale: scale
     });
     
-    animateTableModel();
+    // Start animation only if not already running
+    if (!tableAnimationId) {
+        animateTableModel();
+    }
 }
 
 function initFullTableModel(modelPath) {
@@ -1360,23 +1366,19 @@ function closePopup() {
         popup.classList.remove('active');
     }
     
-    // Clean up table model
-    if (tableRenderer) {
+    // Clean up table model but keep renderer for reuse
+    if (tableAnimationId) {
         cancelAnimationFrame(tableAnimationId);
-        const tableContainer = document.getElementById('table-model');
-        if (tableContainer && tableRenderer.domElement.parentNode === tableContainer) {
-            tableContainer.removeChild(tableRenderer.domElement);
-        }
-        if (tableModel) {
-            tableScene.remove(tableModel);
-            // Don't dispose geometry/materials since we're sharing with main scene
-        }
-        tableRenderer.dispose();
-        tableRenderer = null;
-        tableModel = null;
-        tableScene = null;
-        tableCamera = null;
+        tableAnimationId = null;
     }
+    
+    if (tableModel && tableScene) {
+        tableScene.remove(tableModel);
+        // Don't dispose geometry/materials since we're sharing with main scene
+        tableModel = null;
+    }
+    
+    // Keep renderer, scene, and camera for reuse - don't dispose
     
     // Reset model position when popup closes
     resetModelPosition();
