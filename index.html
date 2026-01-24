@@ -1014,24 +1014,41 @@ function initTableModel(meshName) {
     // Clone the mesh (shares geometry and material, not position)
     tableModel = originalMesh.clone();
     
-    // Reset position and rotation
+    // Create a wrapper object to hold the cloned mesh
+    const wrapper = new THREE.Object3D();
+    wrapper.add(tableModel);
+    
+    // Reset the cloned mesh's local transforms
     tableModel.position.set(0, 0, 0);
     tableModel.rotation.set(0, 0, 0);
+    tableModel.scale.set(1, 1, 1);
     
-    // Auto-scale and center the model
-    const box = new THREE.Box3().setFromObject(tableModel);
+    // Auto-scale and center the wrapper
+    const box = new THREE.Box3().setFromObject(wrapper);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     
     const maxDim = Math.max(size.x, size.y, size.z);
     const scale = 3 / maxDim;
-    tableModel.scale.set(scale, scale, scale);
+    wrapper.scale.set(scale, scale, scale);
     
-    tableModel.position.x = -center.x * scale;
-    tableModel.position.y = -center.y * scale;
-    tableModel.position.z = -center.z * scale;
+    // Center the wrapper
+    wrapper.position.x = -center.x * scale;
+    wrapper.position.y = -center.y * scale;
+    wrapper.position.z = -center.z * scale;
     
-    tableScene.add(tableModel);
+    // Add wrapper to scene instead of direct mesh
+    tableScene.add(wrapper);
+    
+    // Store reference to wrapper for animation
+    tableModel = wrapper;
+    
+    console.log(`Cloned mesh "${meshName}" successfully`, {
+        originalPosition: originalMesh.position,
+        clonedPosition: tableModel.position,
+        scale: scale
+    });
+    
     animateTableModel();
 }
 
