@@ -1291,16 +1291,25 @@ window.addEventListener('resize', function() {
 
 // Auto-load the tabletop model when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Small delay to ensure CSS is applied
-    setTimeout(() => {
-        const fullTableContainer = document.getElementById('table-model-full');
-        if (fullTableContainer) {
-            console.log('Found table-model-full div, loading tabletopex.glb');
-            initFullTableModel('model/tabletopex.glb');
-        } else {
-            console.error('table-model-full div not found in DOM');
-        }
-    }, 100);
+    // Setup info button listener instead of auto-loading
+    const infoBtn = document.getElementById('about-page-btn');
+    
+    if (infoBtn) {
+        infoBtn.addEventListener('click', function() {
+            const fullTableContainer = document.getElementById('table-model-full');
+            
+            // Only load if not already loaded
+            if (fullTableContainer && !fullTableRenderer) {
+                console.log('Info button clicked, loading tabletopex.glb');
+                // Small delay to ensure the about page is visible
+                setTimeout(() => {
+                    initFullTableModel('model/tabletopex.glb');
+                }, 100);
+            }
+        });
+    } else {
+        console.warn('about-page-btn button not found');
+    }
 });
 
 // --- POPUP FUNCTIONS ---
