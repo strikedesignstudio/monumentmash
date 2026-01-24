@@ -378,7 +378,7 @@
 
 #table-model-full {
     width: 50%;
-    height: 100%;
+    height: 700px;
     float: left;
 }
 
@@ -1163,8 +1163,17 @@ function initFullTableModel(modelPath) {
     fullTableScene = new THREE.Scene();
     fullTableScene.background = new THREE.Color(0x1a1a1a);
     
-    const width = tableContainer.clientWidth;
-    const height = tableContainer.clientHeight;
+    // Get dimensions with fallback
+    let width = tableContainer.clientWidth || 800;
+    let height = tableContainer.clientHeight || 600;
+    
+    // If still no height, use a minimum
+    if (height < 100) {
+        height = 600;
+        console.warn('table-model-full has no height, using fallback of 600px');
+    }
+    
+    console.log('Full table model dimensions:', { width, height });
     
     fullTableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
     fullTableCamera.position.set(0, 2, 5);
@@ -1276,10 +1285,16 @@ window.addEventListener('resize', function() {
 
 // Auto-load the tabletop model when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    const fullTableContainer = document.getElementById('table-model-full');
-    if (fullTableContainer) {
-        initFullTableModel('model/tabletopex.glb');
-    }
+    // Small delay to ensure CSS is applied
+    setTimeout(() => {
+        const fullTableContainer = document.getElementById('table-model-full');
+        if (fullTableContainer) {
+            console.log('Found table-model-full div, loading tabletopex.glb');
+            initFullTableModel('model/tabletopex.glb');
+        } else {
+            console.error('table-model-full div not found in DOM');
+        }
+    }, 100);
 });
 
 // --- POPUP FUNCTIONS ---
