@@ -973,6 +973,13 @@ let tableRenderer = null;
 let tableModel = null;
 let tableAnimationId = null;
 
+// --- FULL MODEL LOADER ---
+let fullTableScene = null;
+let fullTableCamera = null;
+let fullTableRenderer = null;
+let fullTableModel = null;
+let fullTableAnimationId = null;
+
 function animateTableModel() {
     tableAnimationId = requestAnimationFrame(animateTableModel);
     
@@ -981,6 +988,16 @@ function animateTableModel() {
     }
     
     tableRenderer.render(tableScene, tableCamera);
+}
+
+function animateFullTableModel() {
+    fullTableAnimationId = requestAnimationFrame(animateFullTableModel);
+    
+    if (fullTableModel) {
+        fullTableModel.rotation.y += 0.005;
+    }
+    
+    fullTableRenderer.render(fullTableScene, fullTableCamera);
 }
 
 function initTableModel(meshName) {
@@ -1108,6 +1125,123 @@ function initTableModel(meshName) {
     animateTableModel();
 }
 
+function initFullTableModel(modelPath) {
+    const tableContainer = document.getElementById('table-model-full');
+    if (!tableContainer) {
+        console.error('table-model-full div not found');
+        return;
+    }
+    
+    // Clear previous model if exists
+    if (fullTableRenderer) {
+        cancelAnimationFrame(fullTableAnimationId);
+        tableContainer.removeChild(fullTableRenderer.domElement);
+        if (fullTableModel) {
+            fullTableScene.remove(fullTableModel);
+            fullTableModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach((m) => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+            });
+        }
+        fullTableRenderer.dispose();
+    }
+    
+    // Setup new scene
+    fullTableScene = new THREE.Scene();
+    fullTableScene.background = new THREE.Color(0x1a1a1a);
+    
+    const width = tableContainer.clientWidth;
+    const height = tableContainer.clientHeight;
+    
+    fullTableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+    fullTableCamera.position.set(0, 2, 5);
+    
+    fullTableRenderer = new THREE.WebGLRenderer({ antialias: true });
+    fullTableRenderer.setSize(width, height);
+    fullTableRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    tableContainer.appendChild(fullTableRenderer.domElement);
+    
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    fullTableScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7.5);
+    fullTableScene.add(directionalLight);
+    
+    // Load the GLB model
+    const fullTableLoader = new THREE.GLTFLoader();
+    
+    fullTableLoader.load(
+        modelPath,
+        function (gltf) {
+            fullTableModel = gltf.scene;
+            
+            // Auto-scale and center the model
+            const box = new THREE.Box3().setFromObject(fullTableModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 3 / maxDim;
+            fullTableModel.scale.multiplyScalar(scale);
+            
+            fullTableModel.position.x = -center.x * scale;
+            fullTableModel.position.y = -center.y * scale;
+            fullTableModel.position.z = -center.z * scale;
+            
+            fullTableScene.add(fullTableModel);
+            animateFullTableModel();
+            
+            console.log(`Loaded full model from ${modelPath}`);
+        },
+        function (xhr) {
+            console.log(`Loading full table model... ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
+        },
+        function (error) {
+            console.error('Error loading full table model:', error);
+        }
+    );
+}
+
+function closeFullTableModel() {
+    if (fullTableRenderer) {
+        cancelAnimationFrame(fullTableAnimationId);
+        const tableContainer = document.getElementById('table-model-full');
+        if (tableContainer && fullTableRenderer.domElement.parentNode === tableContainer) {
+            tableContainer.removeChild(fullTableRenderer.domElement);
+        }
+        if (fullTableModel) {
+            fullTableScene.remove(fullTableModel);
+            fullTableModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach((m) => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+            });
+        }
+        fullTableRenderer.dispose();
+        fullTableRenderer = null;
+        fullTableModel = null;
+        fullTableScene = null;
+        fullTableCamera = null;
+    }
+}
+
 // Handle window resize for table model
 window.addEventListener('resize', function() {
     if (tableRenderer && tableCamera) {
@@ -1119,6 +1253,18 @@ window.addEventListener('resize', function() {
             tableCamera.aspect = width / height;
             tableCamera.updateProjectionMatrix();
             tableRenderer.setSize(width, height);
+        }
+    }
+    
+    if (fullTableRenderer && fullTableCamera) {
+        const fullTableContainer = document.getElementById('table-model-full');
+        if (fullTableContainer) {
+            const width = fullTableContainer.clientWidth;
+            const height = fullTableContainer.clientHeight;
+            
+            fullTableCamera.aspect = width / height;
+            fullTableCamera.updateProjectionMatrix();
+            fullTableRenderer.setSize(width, height);
         }
     }
 });
