@@ -942,6 +942,16 @@ let tableRenderer = null;
 let tableModel = null;
 let tableAnimationId = null;
 
+function animateTableModel() {
+    tableAnimationId = requestAnimationFrame(animateTableModel);
+    
+    if (tableModel) {
+        tableModel.rotation.y += 0.005;
+    }
+    
+    tableRenderer.render(tableScene, tableCamera);
+}
+
 function initTableModel(meshName) {
     const tableContainer = document.getElementById('table-model');
     if (!tableContainer) {
@@ -1025,6 +1035,21 @@ function initTableModel(meshName) {
     animateTableModel();
 }
 
+// Handle window resize for table model
+window.addEventListener('resize', function() {
+    if (tableRenderer && tableCamera) {
+        const tableContainer = document.getElementById('table-model');
+        if (tableContainer) {
+            const width = tableContainer.clientWidth;
+            const height = tableContainer.clientHeight;
+            
+            tableCamera.aspect = width / height;
+            tableCamera.updateProjectionMatrix();
+            tableRenderer.setSize(width, height);
+        }
+    }
+});
+
 // --- POPUP FUNCTIONS ---
 function showPopup(meshName) {
     const info = meshInfo[meshName];
@@ -1067,18 +1092,7 @@ function closePopup() {
         }
         if (tableModel) {
             tableScene.remove(tableModel);
-            tableModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.geometry.dispose();
-                    if (child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach((m) => m.dispose());
-                        } else {
-                            child.material.dispose();
-                        }
-                    }
-                }
-            });
+            // Don't dispose geometry/materials since we're sharing with main scene
         }
         tableRenderer.dispose();
         tableRenderer = null;
