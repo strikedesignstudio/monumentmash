@@ -1112,9 +1112,6 @@ function initTableModel(meshName) {
     tableModel.position.set(0, 0, 0);
     tableModel.rotation.set(0, 0, 0);
     tableModel.scale.set(1, 1, 1);
-
-    // Rotate 90 degrees on X axis (Math.PI / 2 radians = 90 degrees)
-    wrapper.rotation.x = Math.PI / 2;
     
     // Auto-scale and center the wrapper
     const box = new THREE.Box3().setFromObject(wrapper);
