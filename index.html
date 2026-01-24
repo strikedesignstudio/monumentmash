@@ -1206,9 +1206,10 @@ function initFullTableModel(modelPath) {
             const size = box.getSize(new THREE.Vector3());
             
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3 / maxDim;
+            const scale = 5 / maxDim; // Larger scale (was 3)
             fullTableModel.scale.multiplyScalar(scale);
             
+            // Center the model at origin so it rotates around its center
             fullTableModel.position.x = -center.x * scale;
             fullTableModel.position.y = -center.y * scale;
             fullTableModel.position.z = -center.z * scale;
@@ -1216,7 +1217,11 @@ function initFullTableModel(modelPath) {
             fullTableScene.add(fullTableModel);
             animateFullTableModel();
             
-            console.log(`Loaded full model from ${modelPath}`);
+            console.log(`Loaded full model from ${modelPath}`, {
+                size: size,
+                scale: scale,
+                position: fullTableModel.position
+            });
         },
         function (xhr) {
             console.log(`Loading full table model... ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
