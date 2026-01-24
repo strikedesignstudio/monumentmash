@@ -1043,8 +1043,30 @@ function initTableModel(meshName) {
         return;
     }
     
-    // Clone the mesh (shares geometry and material, not position)
+    // Clone the mesh - need to clone material to avoid hover color changes
     tableModel = originalMesh.clone();
+    
+    // Clone the material so hover effects don't apply to popup model
+    if (tableModel.material) {
+        if (Array.isArray(tableModel.material)) {
+            tableModel.material = tableModel.material.map(mat => mat.clone());
+        } else {
+            tableModel.material = tableModel.material.clone();
+        }
+        
+        // Reset to original color (remove any hover effects)
+        if (originalMesh.userData.originalColor) {
+            if (Array.isArray(tableModel.material)) {
+                tableModel.material.forEach(mat => {
+                    if (mat.color) mat.color.copy(originalMesh.userData.originalColor);
+                });
+            } else {
+                if (tableModel.material.color) {
+                    tableModel.material.color.copy(originalMesh.userData.originalColor);
+                }
+            }
+        }
+    }
     
     // Create a wrapper object to hold the cloned mesh
     const wrapper = new THREE.Object3D();
@@ -1064,10 +1086,13 @@ function initTableModel(meshName) {
     const scale = 3 / maxDim;
     wrapper.scale.set(scale, scale, scale);
     
-    // Center the wrapper
-    wrapper.position.x = -center.x * scale;
-    wrapper.position.y = -center.y * scale;
-    wrapper.position.z = -center.z * scale;
+    // Center the wrapper at origin so it rotates around center
+    wrapper.position.set(0, 0, 0);
+    
+    // Offset the mesh inside wrapper to center it
+    tableModel.position.x = -center.x;
+    tableModel.position.y = -center.y;
+    tableModel.position.z = -center.z;
     
     // Add wrapper to scene instead of direct mesh
     tableScene.add(wrapper);
