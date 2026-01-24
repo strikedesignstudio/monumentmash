@@ -1044,13 +1044,23 @@ function initTableModel(meshName) {
     tableRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     tableContainer.appendChild(tableRenderer.domElement);
     
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // Add lights - brighter lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Increased from 0.6
     tableScene.add(ambientLight);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 7.5);
-    tableScene.add(directionalLight);
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5); // Increased from 0.8
+    directionalLight1.position.set(5, 10, 7.5);
+    tableScene.add(directionalLight1);
+    
+    // Add second directional light from opposite side
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1.0);
+    directionalLight2.position.set(-5, 5, -7.5);
+    tableScene.add(directionalLight2);
+    
+    // Add a point light above for extra brightness
+    const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
+    pointLight.position.set(0, 10, 0);
+    tableScene.add(pointLight);
     
     // Find and clone the mesh from the main scene
     if (!loadedModel) {
@@ -1112,7 +1122,7 @@ function initTableModel(meshName) {
     wrapper.scale.set(scale, scale, scale);
     
     // Center the wrapper at origin, then move up slightly
-    wrapper.position.set(0, 2, 0); // Moved up by 2 units
+    wrapper.position.set(0, 2.5, 0); // Moved up by 0.5 units
     
     // Offset the mesh inside wrapper to center it
     tableModel.position.x = -center.x;
@@ -1180,7 +1190,7 @@ function initFullTableModel(modelPath) {
     console.log('Full table model dimensions:', { width, height });
     
     fullTableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-    fullTableCamera.position.set(0, 0, 0);
+    fullTableCamera.position.set(0, 2, 5);
     
     fullTableRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     fullTableRenderer.setClearColor(0x000000, 0); // Transparent background
