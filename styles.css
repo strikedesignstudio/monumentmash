@@ -219,6 +219,8 @@
         .aboutpage.open {
             display: flex;
         }
+
+
         .aboutpage h2 {
             font-family: breakpoint;
             text-transform: uppercase;
@@ -256,6 +258,32 @@
             color: silver;
             max-width: 600px;
             margin: 10px auto;
+        }
+
+        #table-model-full {
+    width: 50%;
+    height: 700px;
+    float: left;
+}
+
+#table-model-full canvas {
+            display: block;
+             width: 100% !important;
+    height: 100% !important;
+        }
+
+        @media (min-width: 600px) {
+
+            .aboutpage-content {
+            width: 100%;
+            height: 50%;
+            padding: 20px !important;
+        }
+            #table-model-full {
+             width: 100%;
+             height: 50%;
+        }
+
         }
 
         .aboutpage-close {
@@ -377,14 +405,4 @@
     height: 100% !important;
 }
 
-#table-model-full {
-    width: 50%;
-    height: 700px;
-    float: left;
-}
 
-#table-model-full canvas {
-            display: block;
-             width: 100% !important;
-    height: 100% !important;
-        }
