@@ -68,7 +68,7 @@
             transition: opacity 0.5s ease;
             padding:20px;
         }
-        
+
         #loading-screen.hidden {
             opacity: 0;
             pointer-events: none;
@@ -394,7 +394,7 @@
     height: 100% !important;
 }
 
-@media (min-width: 600px) {
+@media (max-width: 600px) {
 
         .aboutpage-content {
             width: 100%;
