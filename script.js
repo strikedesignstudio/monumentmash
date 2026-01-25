@@ -267,7 +267,6 @@ let audioPauseTime = 0;
 
 const audioSegments = {
     "Hilmi": 4,
-    "Anon": 66,
     "Henry": 96,
     "Sabir": 116,
     "Shemi": 144,
@@ -284,7 +283,6 @@ let meshInfo = {};
 
 const hoverColorMap = {
     "Hilmi": 0xff0000,
-    "Anon": 0x00ff00,
     "Henry": 0x0000ff,
     "Sabir": 0xffff00,
     "Shemi": 0xff00ff,
