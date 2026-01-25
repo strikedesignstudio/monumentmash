@@ -396,6 +396,11 @@
 
 @media (max-width: 768px) {
 
+    #play-pause-btn {
+            bottom: 20px;
+            left: 20px;
+        }
+
             .loading-title {
             font-size: 6vw;
         }
