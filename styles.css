@@ -396,6 +396,10 @@
 
 @media (max-width: 768px) {
 
+            .loading-title {
+            font-size: 6vw;
+        }
+
     #loading-screen {
         width: auto;
     }
