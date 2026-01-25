@@ -551,11 +551,11 @@ function initTableModel(meshName) {
     const size = box.getSize(new THREE.Vector3());
     
     const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 2 / maxDim; // Smaller scale factor for smaller mesh display
+    const scale = 3 / maxDim; // Smaller scale factor for smaller mesh display
     wrapper.scale.set(scale, scale, scale);
     
     // Center the wrapper at origin, then move up slightly
-    wrapper.position.set(0, 0.5, 0); // Moved up by 0.5 units
+    wrapper.position.set(0, 2.5, 0); // Moved up by 0.5 units
     
     // Offset the mesh inside wrapper to center it
     tableModel.position.x = -center.x;
