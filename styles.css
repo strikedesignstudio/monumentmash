@@ -395,6 +395,10 @@
 
 @media (max-width: 768px) {
 
+    .aboutpage.open {
+    display: block;
+}
+
             .loading-bar-container {
             max-width: 75%;
         }
