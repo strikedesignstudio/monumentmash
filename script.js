@@ -13,50 +13,53 @@ function updateLoadingBar() {
     loadingText.textContent = `Loading... ${Math.round(totalProgress)}%`;
     
     if (totalProgress >= 100) {
-        // Fade out loading bar container and text
         loadingBarContainer.style.transition = 'opacity 0.5s ease-out';
         loadingText.style.transition = 'opacity 0.5s ease-out';
         loadingBarContainer.style.opacity = '0';
         loadingText.style.opacity = '0';
         
-        // After fade out completes, show the button
         setTimeout(() => {
             loadingBarContainer.style.display = 'none';
             loadingText.style.display = 'none';
             startBtn.style.transition = 'opacity 0.5s ease-in';
             startBtn.classList.add('visible');
-        }, 500); // Match the fade-out duration
+        }, 500);
     }
 }
 
 async function startExperience() {
     experienceStarted = true;
     warpAnimationEnabled = true;
+    
+    // CRITICAL: Resume AudioContext on user interaction (required for mobile)
+    try {
+        if (listener.context.state === 'suspended') {
+            console.log('Resuming audio context...');
+            await listener.context.resume();
+            console.log('Audio context state:', listener.context.state);
+        }
+    } catch (error) {
+        console.error('Error resuming audio context:', error);
+    }
+    
     loadingScreen.classList.add('hidden');
     
-    // Initialize model animation start time
     if (loadedModel) {
         loadedModel.userData.animationStartTime = performance.now();
     }
     
-    // Always show play button and initialize monument counter
     playPauseBtn.classList.add('visible');
     updateMonumentCounter();
     
-    // Try to start audio regardless of whether it's loaded
+    // Try to start audio
     try {
-        // Resume audio context if suspended (required by browser autoplay policy)
-        if (listener.context.state === 'suspended') {
-            await listener.context.resume();
-        }
-        
-        // If audio is already loaded, play it
         if (audioBufferShared) {
             playFrom(0);
             isPlaying = true;
             playPauseBtn.innerHTML = '⏸';
+            console.log('Audio started successfully');
         } else {
-            // Audio not loaded yet, but button is ready for when it loads
+            console.log('Audio buffer not ready yet');
             isPlaying = false;
             playPauseBtn.innerHTML = '▶';
         }
@@ -277,7 +280,6 @@ const audioSegments = {
     "Dominic": 617
 };
 
-// meshInfo will be loaded from HTML data attributes
 let meshInfo = {};
 
 const hoverColorMap = {
@@ -322,16 +324,14 @@ function shiftModelForPopup() {
     const isMobile = isMobileDevice();
     
     if (isMobile) {
-        // Move 25% up on mobile
-        const shiftAmount = window.innerHeight * 0.0025; // Adjust multiplier for desired effect
+        const shiftAmount = window.innerHeight * 0.0025;
         targetModelPosition.set(
             originalModelPosition.x,
             originalModelPosition.y + shiftAmount,
             originalModelPosition.z
         );
     } else {
-        // Move 25% left on desktop
-        const shiftAmount = window.innerWidth * 0.003; // Adjust multiplier for desired effect
+        const shiftAmount = window.innerWidth * 0.003;
         targetModelPosition.set(
             originalModelPosition.x - shiftAmount,
             originalModelPosition.y,
@@ -347,17 +347,27 @@ function resetModelPosition() {
     targetModelPosition.copy(originalModelPosition);
 }
 
-// Modified audio loader with callback to start playback if experience already started
+// Modified audio loader
 audioLoader.load('audio/monmashcompnew.mp3', function (buffer) {
     audioBufferShared = buffer;
     loadingProgress.audio = 100;
     updateLoadingBar();
+    console.log('Audio loaded successfully');
     
-    // If experience has already started, auto-play the audio
+    // If experience has already started, try to play
     if (experienceStarted && !isPlaying) {
-        playFrom(0);
-        isPlaying = true;
-        playPauseBtn.innerHTML = '⏸';
+        // Ensure audio context is resumed
+        if (listener.context.state === 'suspended') {
+            listener.context.resume().then(() => {
+                playFrom(0);
+                isPlaying = true;
+                playPauseBtn.innerHTML = '⏸';
+            });
+        } else {
+            playFrom(0);
+            isPlaying = true;
+            playPauseBtn.innerHTML = '⏸';
+        }
     }
 }, function(xhr) {
     if (xhr.total) {
@@ -375,8 +385,30 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 function playFrom(startTime) {
-    if (!audioBufferShared) return;
-    if (currentSource) currentSource.stop();
+    if (!audioBufferShared) {
+        console.log('Audio buffer not loaded');
+        return;
+    }
+    
+    if (currentSource) {
+        currentSource.stop();
+    }
+    
+    const audioCtx = listener.context;
+    
+    // Double-check context state
+    if (audioCtx.state === 'suspended') {
+        console.log('Audio context suspended, resuming...');
+        audioCtx.resume().then(() => {
+            console.log('Audio context resumed, now playing');
+            playFromInternal(startTime);
+        });
+    } else {
+        playFromInternal(startTime);
+    }
+}
+
+function playFromInternal(startTime) {
     const audioCtx = listener.context;
     const source = audioCtx.createBufferSource();
     source.buffer = audioBufferShared;
@@ -388,13 +420,25 @@ function playFrom(startTime) {
     playPauseBtn.innerHTML = '⏸';
 }
 
-function togglePlayPause() {
+async function togglePlayPause() {
     if (!audioBufferShared) {
         console.log('Audio not loaded yet');
         return;
     }
     
     const audioCtx = listener.context;
+    
+    // CRITICAL: Resume audio context if suspended (mobile requirement)
+    if (audioCtx.state === 'suspended') {
+        console.log('Resuming audio context in togglePlayPause');
+        try {
+            await audioCtx.resume();
+            console.log('Audio context resumed successfully');
+        } catch (error) {
+            console.error('Failed to resume audio context:', error);
+            return;
+        }
+    }
     
     if (isPlaying) {
         if (currentSource) {
@@ -408,7 +452,12 @@ function togglePlayPause() {
     }
 }
 
+// Support both click and touch events for play button
 playPauseBtn.addEventListener('click', togglePlayPause);
+playPauseBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    togglePlayPause();
+});
 
 // --- TABLE MODEL LOADER ---
 let tableScene = null;
