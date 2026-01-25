@@ -396,6 +396,10 @@
 
 @media (max-width: 768px) {
 
+            .loading-bar-container {
+            max-width: 75%;
+        }
+
     #play-pause-btn {
             bottom: 20px;
             left: 20px;
