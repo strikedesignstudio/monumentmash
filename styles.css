@@ -68,6 +68,7 @@
             transition: opacity 0.5s ease;
             padding:20px;
         }
+        
         #loading-screen.hidden {
             opacity: 0;
             pointer-events: none;
@@ -78,6 +79,7 @@
         }
 
         .loading-content p {
+            wdith:100%;
             max-width: 500px;
             margin: 20px auto;
             color: silver;
