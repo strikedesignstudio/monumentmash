@@ -284,6 +284,10 @@
              height: 50%;
         }
 
+        body {
+            font-size: 16pt;
+        }
+
         }
 
         .aboutpage-close {
