@@ -607,9 +607,12 @@ function initTableModel(meshName) {
     const wrapper = new THREE.Object3D();
     wrapper.add(tableModel);
     
-    // Reset the cloned mesh's local transforms
+    // Store the original rotation before resetting transforms
+    const originalRotation = originalMesh.rotation.clone();
+    
+    // Reset the cloned mesh's position and scale, but keep rotation
     tableModel.position.set(0, 0, 0);
-    tableModel.rotation.set(0, 0, 0);
+    tableModel.rotation.copy(originalRotation);
     tableModel.scale.set(1, 1, 1);
     
     // Auto-scale and center the wrapper
