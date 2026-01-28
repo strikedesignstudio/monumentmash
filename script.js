@@ -819,7 +819,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (fullTableContainer && !fullTableRenderer) {
                 console.log('Info button clicked, loading tabletopex.glb');
                 setTimeout(() => {
-                    initFullTableModel('model/tabletopex.glb');
+                    initFullTableModel('model/ttexhibition.glb');
                 }, 100);
             }
         });
