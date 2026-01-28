@@ -536,7 +536,7 @@ function initTableModel(meshName) {
     
     // Setup new scene
     tableScene = new THREE.Scene();
-    tableScene.background = new THREE.Color(0x1a1a1a);
+    // Transparent background - no background color set
     
     const width = tableContainer.clientWidth;
     const height = tableContainer.clientHeight;
@@ -544,7 +544,8 @@ function initTableModel(meshName) {
     tableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
     tableCamera.position.set(0, 3, 5);
     
-    tableRenderer = new THREE.WebGLRenderer({ antialias: true });
+    tableRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    tableRenderer.setClearColor(0x000000, 0); // Transparent background
     tableRenderer.setSize(width, height);
     tableRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     tableContainer.appendChild(tableRenderer.domElement);
