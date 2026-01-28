@@ -739,16 +739,32 @@ function initFullTableModel(modelPath) {
             
             const maxDim = Math.max(size.x, size.y, size.z);
             const scale = 5 / maxDim;
-            fullTableModel.scale.multiplyScalar(scale);
             
-            fullTableModel.position.x = -center.x * scale;
-            fullTableModel.position.y = -center.y * scale;
-            fullTableModel.position.z = -center.z * scale;
+            // Create wrapper to hold the model
+            const wrapper = new THREE.Object3D();
+            wrapper.add(fullTableModel);
             
-            fullTableScene.add(fullTableModel);
+            // Scale the wrapper
+            wrapper.scale.set(scale, scale, scale);
+            
+            // Offset the model inside the wrapper to center it
+            fullTableModel.position.x = -center.x;
+            fullTableModel.position.y = -center.y;
+            fullTableModel.position.z = -center.z;
+            
+            // Add wrapper to scene (not the model directly)
+            fullTableScene.add(wrapper);
+            
+            // Store wrapper reference for animation
+            fullTableModel = wrapper;
+            
             animateFullTableModel();
             
-            console.log(`Loaded full model from ${modelPath}`);
+            console.log(`Loaded full model from ${modelPath}`, {
+                center: center,
+                size: size,
+                scale: scale
+            });
         },
         function (xhr) {
             console.log(`Loading full table model... ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
