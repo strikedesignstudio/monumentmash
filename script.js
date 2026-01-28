@@ -739,7 +739,7 @@ function initFullTableModel(modelPath) {
             const size = box.getSize(new THREE.Vector3());
             
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 5 / maxDim;
+            const scale = 3 / maxDim; // Reduced from 5 to 3 for smaller model
             
             // Create wrapper to hold the model
             const wrapper = new THREE.Object3D();
@@ -753,8 +753,8 @@ function initFullTableModel(modelPath) {
             fullTableModel.position.y = -center.y;
             fullTableModel.position.z = -center.z;
             
-            // Move the wrapper up by 50% of the model's height
-            wrapper.position.y = size.y * scale * 0.5;
+            // Move the wrapper up significantly more toward center
+            wrapper.position.y = size.y * scale * 1.5; // Increased from 0.5 to 1.5
             
             // Add wrapper to scene (not the model directly)
             fullTableScene.add(wrapper);
@@ -768,7 +768,7 @@ function initFullTableModel(modelPath) {
                 center: center,
                 size: size,
                 scale: scale,
-                yOffset: size.y * scale * 0.5
+                yOffset: size.y * scale * 1.5
             });
         },
         function (xhr) {
