@@ -753,6 +753,9 @@ function initFullTableModel(modelPath) {
             fullTableModel.position.y = -center.y;
             fullTableModel.position.z = -center.z;
             
+            // Move the wrapper up by 50% of the model's height
+            wrapper.position.y = size.y * scale * 0.5;
+            
             // Add wrapper to scene (not the model directly)
             fullTableScene.add(wrapper);
             
@@ -764,7 +767,8 @@ function initFullTableModel(modelPath) {
             console.log(`Loaded full model from ${modelPath}`, {
                 center: center,
                 size: size,
-                scale: scale
+                scale: scale,
+                yOffset: size.y * scale * 0.5
             });
         },
         function (xhr) {
