@@ -267,7 +267,7 @@ let audioPauseTime = 0;
 
 const audioSegments = {
     "Hilmi": 4,
-    "Henry": 96,
+    "Henry": 66,
     "Sabir": 116,
     "Shemi": 144,
     "Hannah": 186,
