@@ -840,9 +840,11 @@ function showPopup(meshName) {
     }
     
     const title = popup.querySelector('.mesh-popup-title');
+    const sub = popup.querySelector('.mesh-popup-sub');
     const description = popup.querySelector('.mesh-popup-description');
     
     if (title) title.textContent = info.title;
+    if (sub) sub.textContent = info.sub;
     if (description) description.textContent = info.description;
     
     // Load the corresponding 3D model into table-model div
@@ -871,6 +873,7 @@ document.addEventListener('DOMContentLoaded', function() {
     meshInfoElements.forEach(item => {
         const name = item.getAttribute('data-name');
         const title = item.getAttribute('data-title');
+        const sub = item.getAttribute('data-sub');
         const description = item.getAttribute('data-description');
         
         if (name && title && description) {
