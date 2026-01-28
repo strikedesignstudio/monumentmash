@@ -248,7 +248,8 @@
 
         .aboutpage-content {
             width: 50%;
-            height: 100%;
+            height: 100vh;
+            top:0px;
             float: left;
             overflow-y: auto;
             padding: 50px 75px 150px 50px;
@@ -263,8 +264,9 @@
 
         #table-model-full {
     width: 50%;
-    height: 700px;
+    height: 100vh;
     float: left;
+    top:0px;
 }
 
 #table-model-full canvas {
