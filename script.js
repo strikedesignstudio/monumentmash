@@ -160,7 +160,7 @@ const tempColor = new THREE.Color();
 const mainScene = new THREE.Scene();
 const sceneLayer = document.getElementById('scene-layer');
 const mainCamera = new THREE.PerspectiveCamera(70, sceneLayer.clientWidth / sceneLayer.clientHeight, 0.01, 1000);
-mainCamera.position.set(0, 0, 5);
+mainCamera.position.set(0, 0, 3); // Changed from 5 to 3 for closer starting position
 
 const mainRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 mainRenderer.setClearColor(0x000000, 0);
@@ -227,7 +227,7 @@ sceneLayer.addEventListener('touchend', () => {
 sceneLayer.addEventListener('wheel', (e) => {
     e.preventDefault();
     mainCamera.position.z += e.deltaY * 0.01;
-    mainCamera.position.z = Math.max(0.5, Math.min(mainCamera.position.z, 20));
+    mainCamera.position.z = Math.max(0.1, Math.min(mainCamera.position.z, 20)); // Changed min from 0.5 to 0.1 for closer zoom
 });
 
 // --- LIGHTS ---
