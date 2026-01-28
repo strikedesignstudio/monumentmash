@@ -840,11 +840,11 @@ function showPopup(meshName) {
     }
     
     const title = popup.querySelector('.mesh-popup-title');
-    const sub = popup.querySelector('.mesh-popup-sub');
+    const subtitle = popup.querySelector('.mesh-popup-sub');
     const description = popup.querySelector('.mesh-popup-description');
     
     if (title) title.textContent = info.title;
-    if (sub) sub.textContent = info.sub;
+    if (subtitle) subtitle.textContent = info.subtitle || ''; // Set subtitle if it exists
     if (description) description.textContent = info.description;
     
     // Load the corresponding 3D model into table-model div
@@ -873,11 +873,15 @@ document.addEventListener('DOMContentLoaded', function() {
     meshInfoElements.forEach(item => {
         const name = item.getAttribute('data-name');
         const title = item.getAttribute('data-title');
-        const sub = item.getAttribute('data-sub');
+        const subtitle = item.getAttribute('data-subtitle');
         const description = item.getAttribute('data-description');
         
         if (name && title && description) {
-            meshInfo[name] = { title, description };
+            meshInfo[name] = { 
+                title, 
+                subtitle: subtitle || '', // Include subtitle, default to empty string
+                description 
+            };
         }
     });
     
