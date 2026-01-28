@@ -210,7 +210,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: 100vh;
             background: rgba(0, 0, 0, 0.6);
             z-index: 100;
             display: none;
@@ -352,6 +352,14 @@
     font-family: breakpoint;
     line-height: 1.75em;
 }
+
+.mesh-popup-sub {
+    margin: 0px;
+    font-size: 1em;
+    font-family: breakpoint;
+    line-height: 1.75em;
+}
+
 
 .mesh-popup-description {
     margin: 0;
