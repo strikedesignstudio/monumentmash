@@ -302,7 +302,6 @@
     position: fixed;
     top:0px;
     right: 0px;
-    background: rgba(0, 0, 0, 0.8);
     z-index: 90;
     opacity: 0;
     visibility: hidden;
