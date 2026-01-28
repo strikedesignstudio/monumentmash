@@ -491,6 +491,39 @@ function animateFullTableModel() {
     fullTableRenderer.render(fullTableScene, fullTableCamera);
 }
 
+// IMPROVED: Better cleanup function for table model
+function cleanupTableModel() {
+    if (tableAnimationId) {
+        cancelAnimationFrame(tableAnimationId);
+        tableAnimationId = null;
+    }
+    
+    if (tableRenderer) {
+        const tableContainer = document.getElementById('table-model');
+        
+        // Remove canvas from DOM
+        if (tableContainer && tableRenderer.domElement.parentNode === tableContainer) {
+            tableContainer.removeChild(tableRenderer.domElement);
+        }
+        
+        // Dispose of renderer and force context loss
+        tableRenderer.dispose();
+        tableRenderer.forceContextLoss();
+        tableRenderer = null;
+    }
+    
+    if (tableModel) {
+        // Don't dispose geometry/materials since we're cloning from main scene
+        tableScene.remove(tableModel);
+        tableModel = null;
+    }
+    
+    tableScene = null;
+    tableCamera = null;
+    
+    console.log('Table model cleaned up');
+}
+
 function initTableModel(meshName) {
     const tableContainer = document.getElementById('table-model');
     if (!tableContainer) {
@@ -498,16 +531,8 @@ function initTableModel(meshName) {
         return;
     }
     
-    // Clear previous model if exists
-    if (tableRenderer) {
-        cancelAnimationFrame(tableAnimationId);
-        tableContainer.removeChild(tableRenderer.domElement);
-        if (tableModel) {
-            tableScene.remove(tableModel);
-            // Don't dispose geometry/materials since we're cloning
-        }
-        tableRenderer.dispose();
-    }
+    // IMPROVED: Clean up previous model completely
+    cleanupTableModel();
     
     // Setup new scene
     tableScene = new THREE.Scene();
@@ -517,7 +542,7 @@ function initTableModel(meshName) {
     const height = tableContainer.clientHeight;
     
     tableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-    tableCamera.position.set(0, 3, 5); // Moved camera up slightly to see the mesh better
+    tableCamera.position.set(0, 3, 5);
     
     tableRenderer = new THREE.WebGLRenderer({ antialias: true });
     tableRenderer.setSize(width, height);
@@ -525,19 +550,17 @@ function initTableModel(meshName) {
     tableContainer.appendChild(tableRenderer.domElement);
     
     // Add lights - brighter lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Increased from 0.6
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     tableScene.add(ambientLight);
     
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5); // Increased from 0.8
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
     directionalLight1.position.set(5, 10, 7.5);
     tableScene.add(directionalLight1);
     
-    // Add second directional light from opposite side
     const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1.0);
     directionalLight2.position.set(-5, 5, -7.5);
     tableScene.add(directionalLight2);
     
-    // Add a point light above for extra brightness
     const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
     pointLight.position.set(0, 10, 0);
     tableScene.add(pointLight);
@@ -560,23 +583,20 @@ function initTableModel(meshName) {
         return;
     }
     
-    // Clone the mesh - need to clone material to avoid hover color changes
+    // Clone the mesh
     tableModel = originalMesh.clone();
     
     // Clone the material so hover effects don't apply to popup model
     if (tableModel.material) {
         if (Array.isArray(tableModel.material)) {
             tableModel.material = tableModel.material.map(mat => mat.clone());
-            // Reset each material to original color
             tableModel.material.forEach(mat => {
                 if (mat.color) {
-                    // Set to white/neutral color to remove any hover tint
                     mat.color.setHex(0xffffff);
                 }
             });
         } else {
             tableModel.material = tableModel.material.clone();
-            // Reset to white/neutral color to remove any hover tint
             if (tableModel.material.color) {
                 tableModel.material.color.setHex(0xffffff);
             }
@@ -598,30 +618,67 @@ function initTableModel(meshName) {
     const size = box.getSize(new THREE.Vector3());
     
     const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 3 / maxDim; // Smaller scale factor for smaller mesh display
+    const scale = 3 / maxDim;
     wrapper.scale.set(scale, scale, scale);
     
-    // Center the wrapper at origin, then move up slightly
-    wrapper.position.set(0, 2.5, 0); // Moved up by 0.5 units
+    wrapper.position.set(0, 2.5, 0);
     
-    // Offset the mesh inside wrapper to center it
     tableModel.position.x = -center.x;
     tableModel.position.y = -center.y;
     tableModel.position.z = -center.z;
     
-    // Add wrapper to scene instead of direct mesh
     tableScene.add(wrapper);
     
     // Store reference to wrapper for animation
     tableModel = wrapper;
     
-    console.log(`Cloned mesh "${meshName}" successfully`, {
-        originalPosition: originalMesh.position,
-        clonedPosition: tableModel.position,
-        scale: scale
-    });
+    console.log(`Cloned mesh "${meshName}" successfully`);
     
     animateTableModel();
+}
+
+// IMPROVED: Better cleanup function for full table model
+function cleanupFullTableModel() {
+    if (fullTableAnimationId) {
+        cancelAnimationFrame(fullTableAnimationId);
+        fullTableAnimationId = null;
+    }
+    
+    if (fullTableRenderer) {
+        const fullTableContainer = document.getElementById('table-model-full');
+        
+        // Remove canvas from DOM
+        if (fullTableContainer && fullTableRenderer.domElement.parentNode === fullTableContainer) {
+            fullTableContainer.removeChild(fullTableRenderer.domElement);
+        }
+        
+        // Dispose of renderer and force context loss
+        fullTableRenderer.dispose();
+        fullTableRenderer.forceContextLoss();
+        fullTableRenderer = null;
+    }
+    
+    if (fullTableModel) {
+        fullTableModel.traverse((child) => {
+            if (child.isMesh) {
+                child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach((m) => m.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            }
+        });
+        fullTableScene.remove(fullTableModel);
+        fullTableModel = null;
+    }
+    
+    fullTableScene = null;
+    fullTableCamera = null;
+    
+    console.log('Full table model cleaned up');
 }
 
 function initFullTableModel(modelPath) {
@@ -631,37 +688,15 @@ function initFullTableModel(modelPath) {
         return;
     }
     
-    // Clear previous model if exists
-    if (fullTableRenderer) {
-        cancelAnimationFrame(fullTableAnimationId);
-        tableContainer.removeChild(fullTableRenderer.domElement);
-        if (fullTableModel) {
-            fullTableScene.remove(fullTableModel);
-            fullTableModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.geometry.dispose();
-                    if (child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach((m) => m.dispose());
-                        } else {
-                            child.material.dispose();
-                        }
-                    }
-                }
-            });
-        }
-        fullTableRenderer.dispose();
-    }
+    // IMPROVED: Clean up previous model completely
+    cleanupFullTableModel();
     
     // Setup new scene
     fullTableScene = new THREE.Scene();
-    // Transparent background instead of solid color
     
-    // Get dimensions with fallback
     let width = tableContainer.clientWidth || 800;
     let height = tableContainer.clientHeight || 600;
     
-    // If still no height, use a minimum
     if (height < 100) {
         height = 600;
         console.warn('table-model-full has no height, using fallback of 600px');
@@ -673,7 +708,7 @@ function initFullTableModel(modelPath) {
     fullTableCamera.position.set(0, 2, 5);
     
     fullTableRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    fullTableRenderer.setClearColor(0x000000, 0); // Transparent background
+    fullTableRenderer.setClearColor(0x000000, 0);
     fullTableRenderer.setSize(width, height);
     fullTableRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     tableContainer.appendChild(fullTableRenderer.domElement);
@@ -700,10 +735,9 @@ function initFullTableModel(modelPath) {
             const size = box.getSize(new THREE.Vector3());
             
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 5 / maxDim; // Larger scale (was 3)
+            const scale = 5 / maxDim;
             fullTableModel.scale.multiplyScalar(scale);
             
-            // Center the model at origin so it rotates around its center
             fullTableModel.position.x = -center.x * scale;
             fullTableModel.position.y = -center.y * scale;
             fullTableModel.position.z = -center.z * scale;
@@ -711,11 +745,7 @@ function initFullTableModel(modelPath) {
             fullTableScene.add(fullTableModel);
             animateFullTableModel();
             
-            console.log(`Loaded full model from ${modelPath}`, {
-                size: size,
-                scale: scale,
-                position: fullTableModel.position
-            });
+            console.log(`Loaded full model from ${modelPath}`);
         },
         function (xhr) {
             console.log(`Loading full table model... ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
@@ -727,33 +757,7 @@ function initFullTableModel(modelPath) {
 }
 
 function closeFullTableModel() {
-    if (fullTableRenderer) {
-        cancelAnimationFrame(fullTableAnimationId);
-        const tableContainer = document.getElementById('table-model-full');
-        if (tableContainer && fullTableRenderer.domElement.parentNode === tableContainer) {
-            tableContainer.removeChild(fullTableRenderer.domElement);
-        }
-        if (fullTableModel) {
-            fullTableScene.remove(fullTableModel);
-            fullTableModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.geometry.dispose();
-                    if (child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach((m) => m.dispose());
-                        } else {
-                            child.material.dispose();
-                        }
-                    }
-                }
-            });
-        }
-        fullTableRenderer.dispose();
-        fullTableRenderer = null;
-        fullTableModel = null;
-        fullTableScene = null;
-        fullTableCamera = null;
-    }
+    cleanupFullTableModel();
 }
 
 // Handle window resize for table model
@@ -785,7 +789,6 @@ window.addEventListener('resize', function() {
 
 // Auto-load the tabletop model when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Setup info button listener instead of auto-loading
     const infoBtn = document.getElementById('about-page-btn');
     
     if (infoBtn) {
@@ -795,7 +798,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Only load if not already loaded
             if (fullTableContainer && !fullTableRenderer) {
                 console.log('Info button clicked, loading tabletopex.glb');
-                // Small delay to ensure the about page is visible
                 setTimeout(() => {
                     initFullTableModel('model/tabletopex.glb');
                 }, 100);
@@ -811,14 +813,12 @@ function showPopup(meshName) {
     const info = meshInfo[meshName];
     if (!info) return;
     
-    // Get or create popup element
     let popup = document.getElementById('mesh-popup');
     if (!popup) {
         console.error('Popup element not found in HTML');
         return;
     }
     
-    // Update popup content
     const title = popup.querySelector('.mesh-popup-title');
     const description = popup.querySelector('.mesh-popup-description');
     
@@ -828,7 +828,6 @@ function showPopup(meshName) {
     // Load the corresponding 3D model into table-model div
     initTableModel(meshName);
     
-    // Show popup and shift model
     popup.classList.add('active');
     shiftModelForPopup();
 }
@@ -839,25 +838,9 @@ function closePopup() {
         popup.classList.remove('active');
     }
     
-    // Clean up table model
-    if (tableRenderer) {
-        cancelAnimationFrame(tableAnimationId);
-        const tableContainer = document.getElementById('table-model');
-        if (tableContainer && tableRenderer.domElement.parentNode === tableContainer) {
-            tableContainer.removeChild(tableRenderer.domElement);
-        }
-        if (tableModel) {
-            tableScene.remove(tableModel);
-            // Don't dispose geometry/materials since we're sharing with main scene
-        }
-        tableRenderer.dispose();
-        tableRenderer = null;
-        tableModel = null;
-        tableScene = null;
-        tableCamera = null;
-    }
+    // IMPROVED: Use new cleanup function
+    cleanupTableModel();
     
-    // Reset model position when popup closes
     resetModelPosition();
 }
 
@@ -970,16 +953,13 @@ loader.load(
         
         model.scale.set(0.026, 0.026, 0.026);
         
-        // Start position (zoomed out)
         model.position.set(0, -2.5, -50);
         
-        // Store final position and animation state
         model.userData.finalPosition = new THREE.Vector3(0, -2.5, -5);
         model.userData.startPosition = new THREE.Vector3(0, -2.5, -50);
         model.userData.animationStartTime = null;
-        model.userData.animationDuration = 5000; // 5 seconds in milliseconds
+        model.userData.animationDuration = 5000;
         
-        // Set original position for shifting
         originalModelPosition.set(0, -2.5, -5);
         targetModelPosition.set(0, -2.5, -5);
         
@@ -1072,17 +1052,14 @@ function animate() {
         const elapsed = performance.now() - loadedModel.userData.animationStartTime;
         const progress = Math.min(elapsed / loadedModel.userData.animationDuration, 1);
         
-        // Easing function for smooth animation (ease-out cubic)
         const easeProgress = 1 - Math.pow(1 - progress, 3);
         
-        // Interpolate position
         loadedModel.position.lerpVectors(
             loadedModel.userData.startPosition,
             loadedModel.userData.finalPosition,
             easeProgress
         );
         
-        // Stop animation after completion
         if (progress >= 1) {
             loadedModel.userData.animationStartTime = null;
             loadedModel.position.copy(loadedModel.userData.finalPosition);
