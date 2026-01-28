@@ -275,7 +275,7 @@
 
 
         .aboutpage-close {
-            position: absolute;
+            position: fixed;
             font-family: plexmono;
             top: 30px;
             right: 30px;
