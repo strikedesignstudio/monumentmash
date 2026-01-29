@@ -27,8 +27,11 @@
         }
 
         .modelslider {
-            position: absolute;
-            margin:30px auto;
+    position: absolute;
+    margin: 0px auto;
+    bottom: 30px;
+    width: 100%;
+    text-align: center;
         }
 
         .clouds-overlay {
@@ -274,6 +277,7 @@
     height: 100vh;
     float: left;
     top:0px;
+    position: relative;
 }
 
 #table-model-full canvas {
