@@ -30,7 +30,7 @@
             position: absolute;
             margin:30px auto;
         }
-        
+
         .clouds-overlay {
             z-index: 10;
             opacity: .3;
@@ -150,6 +150,8 @@
   white-space: nowrap;
   will-change: box-shadow,transform;
   font-size: 18px;
+  font-family: breakpoint;
+  text-transform: uppercase;
 }
 
 #start-experience-btn:focus {
