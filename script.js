@@ -470,6 +470,8 @@ let fullTableCamera = null;
 let fullTableRenderer = null;
 let fullTableModel = null;
 let fullTableAnimationId = null;
+let currentModelIndex = 0; // Track which model is currently shown
+const fullModels = ['model/ttexhibition.glb', 'model/tabletopex.glb']; // Array of models to cycle through
 
 function animateTableModel() {
     tableAnimationId = requestAnimationFrame(animateTableModel);
@@ -780,8 +782,25 @@ function initFullTableModel(modelPath) {
     );
 }
 
+// NEW: Function to load next model in the slider
+function loadNextFullModel() {
+    currentModelIndex = (currentModelIndex + 1) % fullModels.length;
+    const nextModel = fullModels[currentModelIndex];
+    console.log(`Loading next model: ${nextModel} (index ${currentModelIndex})`);
+    initFullTableModel(nextModel);
+}
+
+// NEW: Function to load previous model in the slider
+function loadPreviousFullModel() {
+    currentModelIndex = (currentModelIndex - 1 + fullModels.length) % fullModels.length;
+    const previousModel = fullModels[currentModelIndex];
+    console.log(`Loading previous model: ${previousModel} (index ${currentModelIndex})`);
+    initFullTableModel(previousModel);
+}
+
 function closeFullTableModel() {
     cleanupFullTableModel();
+    currentModelIndex = 0; // Reset to first model when closing
 }
 
 // Handle window resize for table model
@@ -821,14 +840,32 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Only load if not already loaded
             if (fullTableContainer && !fullTableRenderer) {
-                console.log('Info button clicked, loading tabletopex.glb');
+                console.log('Info button clicked, loading first model');
                 setTimeout(() => {
-                    initFullTableModel('model/ttexhibition.glb');
+                    initFullTableModel(fullModels[currentModelIndex]);
                 }, 100);
             }
         });
     } else {
         console.warn('about-page-btn button not found');
+    }
+    
+    // NEW: Setup slider navigation buttons
+    const nextBtn = document.getElementById('model-next-btn');
+    const prevBtn = document.getElementById('model-prev-btn');
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            console.log('Next button clicked');
+            loadNextFullModel();
+        });
+    }
+    
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            console.log('Previous button clicked');
+            loadPreviousFullModel();
+        });
     }
 });
 
