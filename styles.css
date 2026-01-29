@@ -25,6 +25,12 @@
         a {
             color:#7FFFD4;
         }
+
+        .modelslider {
+            position: absolute;
+            margin:30px auto;
+        }
+        
         .clouds-overlay {
             z-index: 10;
             opacity: .3;
