@@ -430,6 +430,13 @@
     height: 50px;
 }
 
+.modelslider button {
+    background: none;
+    color: white;
+    border: 0;
+    font-size: large;
+}
+
 @media (max-width: 768px) {
 
             .aboutpage h2 {
