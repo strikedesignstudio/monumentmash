@@ -275,6 +275,10 @@
             position: relative;
         }
 
+        .aboutpage-content b {
+    color: white;
+}
+
         .aboutpage-content p {
             color: silver;
             max-width: 600px;
