@@ -15,7 +15,16 @@
 
         @font-face {
   font-family: plexmono; /* set name */
-  src: url(IBMPlexMono-Regular.ttf); /* url of the font */
+  src: url(IBMPlexMono-Regular.woff2); /* url of the font */
+  font-weight: normal;
+  font-style: normal;
+}
+/* Bold Weight */
+@font-face {
+  font-family: 'plexmono';
+  src: url(IBMPlexMono-Bold.woff2); /* Update to your bold filename */
+  font-weight: bold;
+  font-style: normal;
 }
 
         canvas {
