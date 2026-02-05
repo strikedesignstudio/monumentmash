@@ -1021,7 +1021,7 @@ sceneLayer.addEventListener("mousemove", onMouseMove);
 const loader = new THREE.GLTFLoader();
 
 loader.load(
-    'model/modelfull2.glb',
+    'model/modelfull3.glb',
     function (gltf) {
         loadingProgress.model = 100;
         updateLoadingBar();
