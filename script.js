@@ -293,6 +293,7 @@ const hoverColorMap = {
     "Rachid": 0x8800ff,
     "Jermaine": 0xff0088,
     "Dominic": 0x00ff88,
+    // Add the new meshes with custom colors (using actual mesh names from model)
     "mesh.001": 0xff6b6b,  // Coral red
     "mesh.002": 0x4ecdc4,  // Turquoise
     "mesh.003": 0xffe66d,  // Yellow
@@ -482,7 +483,8 @@ function animateTableModel() {
     tableAnimationId = requestAnimationFrame(animateTableModel);
     
     if (tableModel) {
-        tableModel.rotation.y += 0.005;
+        // Rotate around the Y-axis (vertical center axis) in a plain circle
+        tableModel.rotation.y += 0.01; // Adjust speed as needed (0.01 = slow, 0.02 = faster)
     }
     
     tableRenderer.render(tableScene, tableCamera);
@@ -615,12 +617,9 @@ function initTableModel(meshName) {
     const wrapper = new THREE.Object3D();
     wrapper.add(tableModel);
     
-    // Store the original rotation before resetting transforms
-    const originalRotation = originalMesh.rotation.clone();
-    
-    // Reset the cloned mesh's position and scale, but keep rotation
+    // Reset the cloned mesh to upright position
     tableModel.position.set(0, 0, 0);
-    tableModel.rotation.copy(originalRotation);
+    tableModel.rotation.set(0, 0, 0); // Start from upright position
     tableModel.scale.set(1, 1, 1);
     
     // Auto-scale and center the wrapper
@@ -632,8 +631,10 @@ function initTableModel(meshName) {
     const scale = 3 / maxDim;
     wrapper.scale.set(scale, scale, scale);
     
-    wrapper.position.set(0, 2.5, 0);
+    // Center the model vertically
+    wrapper.position.set(0, 0, 0);
     
+    // Offset the mesh to center it properly
     tableModel.position.x = -center.x;
     tableModel.position.y = -center.y;
     tableModel.position.z = -center.z;
