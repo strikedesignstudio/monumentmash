@@ -1082,26 +1082,33 @@ loader.load(
                     console.log('Added to hoverable:', child.name);
                     hoverableObjects.push(child);
                     
-                    warpingMeshes.push(child);
-                    child.userData.originalPosition = child.position.clone();
+                    // Only add to warpingMeshes if NOT one of mesh001-mesh005
+                    const isStaticMesh = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'].includes(child.name);
                     
-                    const radius = 50 + Math.random() * 100;
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.random() * Math.PI;
-                    
-                    child.position.x = radius * Math.sin(phi) * Math.cos(theta);
-                    child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
-                    child.position.z = radius * Math.cos(phi) - 5;
-                    
-                    child.userData.velocityX = (Math.random() - 0.5) * 0.02;
-                    child.userData.velocityY = (Math.random() - 0.5) * 0.02;
-                    child.userData.velocityZ = (Math.random() - 0.5) * 0.02;
-                    
-                    child.userData.rotationSpeed = {
-                        x: (Math.random() - 0.5) * 0.01,
-                        y: (Math.random() - 0.5) * 0.01,
-                        z: (Math.random() - 0.5) * 0.01
-                    };
+                    if (!isStaticMesh) {
+                        warpingMeshes.push(child);
+                        child.userData.originalPosition = child.position.clone();
+                        
+                        const radius = 50 + Math.random() * 100;
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.random() * Math.PI;
+                        
+                        child.position.x = radius * Math.sin(phi) * Math.cos(theta);
+                        child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
+                        child.position.z = radius * Math.cos(phi) - 5;
+                        
+                        child.userData.velocityX = (Math.random() - 0.5) * 0.02;
+                        child.userData.velocityY = (Math.random() - 0.5) * 0.02;
+                        child.userData.velocityZ = (Math.random() - 0.5) * 0.02;
+                        
+                        child.userData.rotationSpeed = {
+                            x: (Math.random() - 0.5) * 0.01,
+                            y: (Math.random() - 0.5) * 0.01,
+                            z: (Math.random() - 0.5) * 0.01
+                        };
+                    } else {
+                        console.log('Keeping mesh static (no warping):', child.name);
+                    }
                 }
             }
         });
