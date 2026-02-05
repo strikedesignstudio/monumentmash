@@ -917,6 +917,7 @@ function closePopup() {
 document.addEventListener('DOMContentLoaded', function() {
     // Load mesh info from HTML
     const meshInfoElements = document.querySelectorAll('.mesh-info-item');
+    console.log('Found mesh info elements:', meshInfoElements.length);
     meshInfoElements.forEach(item => {
         const name = item.getAttribute('data-name');
         const title = item.getAttribute('data-title');
@@ -929,8 +930,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 subtitle: subtitle || '', // Include subtitle, default to empty string
                 description 
             };
+            console.log('Loaded mesh info for:', name);
         }
     });
+    
+    console.log('Total meshInfo loaded:', Object.keys(meshInfo));
     
     const popup = document.getElementById('mesh-popup');
     const closeBtn = document.getElementById('mesh-popup-close');
@@ -958,6 +962,10 @@ function onClick(event) {
 
     if (intersects.length > 0) {
         const clicked = intersects[0].object;
+        console.log('Clicked mesh:', clicked.name);
+        console.log('Has meshInfo?', !!meshInfo[clicked.name]);
+        console.log('Has audioSegment?', audioSegments[clicked.name]);
+        
         if (clicked.material && clicked.material.opacity !== undefined) {
             clicked.material.opacity = 0.6;
             setTimeout(() => (clicked.material.opacity = 1), 300);
@@ -1064,10 +1072,14 @@ loader.load(
 
         model.traverse((child) => {
             if (child.isMesh && !meshesToRemove.includes(child.name)) {
+                // DEBUG: Log all mesh names
+                console.log('Found mesh:', child.name);
+                
                 clickableObjects.push(child);
                 child.material.transparent = true;
                 
                 if (Object.keys(hoverColorMap).includes(child.name)) {
+                    console.log('Added to hoverable:', child.name);
                     hoverableObjects.push(child);
                     
                     warpingMeshes.push(child);
