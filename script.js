@@ -227,7 +227,7 @@ sceneLayer.addEventListener('touchend', () => {
 sceneLayer.addEventListener('wheel', (e) => {
     e.preventDefault();
     mainCamera.position.z += e.deltaY * 0.01;
-    mainCamera.position.z = Math.max(0.1, Math.min(mainCamera.position.z, 20)); // Changed min from 0.5 to 0.1 for closer zoom
+    mainCamera.position.z = Math.max(-5, Math.min(mainCamera.position.z, 20)); // Changed min from 0.1 to -5 to allow much closer zoom
 });
 
 // --- LIGHTS ---
@@ -1021,7 +1021,7 @@ sceneLayer.addEventListener("mousemove", onMouseMove);
 const loader = new THREE.GLTFLoader();
 
 loader.load(
-    'model/modelfull3.glb',
+    'model/modelfull2.glb',
     function (gltf) {
         loadingProgress.model = 100;
         updateLoadingBar();
