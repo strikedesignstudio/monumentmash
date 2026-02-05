@@ -293,11 +293,11 @@ const hoverColorMap = {
     "Rachid": 0x8800ff,
     "Jermaine": 0xff0088,
     "Dominic": 0x00ff88,
-    "Mesh001": 0xff6b6b,  // Coral red
-    "Mesh002": 0x4ecdc4,  // Turquoise
-    "Mesh003": 0xffe66d,  // Yellow
-    "Mesh004": 0xa8e6cf,  // Mint green
-    "Mesh005": 0xff8b94   // Pink
+    "mesh.001": 0xff6b6b,  // Coral red
+    "mesh.002": 0x4ecdc4,  // Turquoise
+    "mesh.003": 0xffe66d,  // Yellow
+    "mesh.004": 0xa8e6cf,  // Mint green
+    "mesh.005": 0xff8b94   // Pink
 };
 
 const playPauseBtn = document.getElementById('play-pause-btn');
