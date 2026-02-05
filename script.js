@@ -551,7 +551,7 @@ function initTableModel(meshName) {
     const height = tableContainer.clientHeight;
     
     tableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-    tableCamera.position.set(0, 3, 5);
+    tableCamera.position.set(0, 0, 5); // Changed from (0, 3, 5) to (0, 0, 5) to center vertically
     
     tableRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     tableRenderer.setClearColor(0x000000, 0); // Transparent background
