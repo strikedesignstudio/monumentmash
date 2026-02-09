@@ -318,16 +318,27 @@ function updateMonumentCounter() {
     const dissolvedCount = dissolvedStatues.size;
     
     if (monumentCounter) {
-        if (dissolvedCount > 0) {
-            // Show dissolved statues message
-            monumentCounter.textContent = `Congratulations! You have dissolved ${dissolvedCount}/${totalStatues} colonial statues.`;
-        } else if (visitedCount > 0) {
-            // Show visited monuments message
-            monumentCounter.textContent = `Congratulations! You have visited ${visitedCount}/${totalMonuments} monuments.`;
-        } else {
-            // Default message
-            monumentCounter.textContent = `Congratulations! You have visited 0/${totalMonuments} monuments.`;
+        let message = '';
+        
+        // Show visited monuments if any
+        if (visitedCount > 0) {
+            message = `Congratulations! You have visited ${visitedCount}/${totalMonuments} monuments.`;
         }
+        
+        // Add dissolved statues on a new line if any
+        if (dissolvedCount > 0) {
+            if (message) {
+                message += '<br>'; // Add line break
+            }
+            message += `Congratulations! You have dissolved ${dissolvedCount}/${totalStatues} colonial statues.`;
+        }
+        
+        // Default message if nothing visited or dissolved
+        if (!message) {
+            message = `Congratulations! You have visited 0/${totalMonuments} monuments.`;
+        }
+        
+        monumentCounter.innerHTML = message; // Use innerHTML to support <br> tag
         monumentCounter.style.opacity = (visitedCount > 0 || dissolvedCount > 0) ? '1' : '0';
     }
 }
