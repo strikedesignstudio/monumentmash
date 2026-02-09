@@ -963,38 +963,38 @@ function explodeMesh(mesh) {
     
     console.log('Exploding mesh:', mesh.name);
     
-    // Create explosion particles from the mesh
-    const particleCount = 50;
+    // Create small explosion particles from the mesh
+    const particleCount = 20; // Reduced from 50 to 20 for smaller effect
     const particles = [];
     
     for (let i = 0; i < particleCount; i++) {
         // Clone the mesh for each particle (smaller version)
         const particle = mesh.clone();
         
-        // Make particle much smaller
-        const scale = 0.1 + Math.random() * 0.2;
+        // Make particles smaller
+        const scale = 0.05 + Math.random() * 0.1; // Reduced scale
         particle.scale.set(scale, scale, scale);
         
         // Position at the original mesh location
         particle.position.copy(mesh.position);
         
-        // Random explosion velocity
+        // Smaller, tighter explosion velocity
         particle.userData.velocity = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.5,
-            (Math.random() - 0.5) * 0.5,
-            (Math.random() - 0.5) * 0.5
+            (Math.random() - 0.5) * 0.15, // Reduced from 0.5 to 0.15
+            (Math.random() - 0.5) * 0.15,
+            (Math.random() - 0.5) * 0.15
         );
         
         // Random rotation speed
         particle.userData.rotationSpeed = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.2,
-            (Math.random() - 0.5) * 0.2,
-            (Math.random() - 0.5) * 0.2
+            (Math.random() - 0.5) * 0.1, // Reduced from 0.2 to 0.1
+            (Math.random() - 0.5) * 0.1,
+            (Math.random() - 0.5) * 0.1
         );
         
-        // Fade out over time
+        // Fade out faster
         particle.userData.life = 1.0;
-        particle.userData.fadeSpeed = 0.02 + Math.random() * 0.02;
+        particle.userData.fadeSpeed = 0.05 + Math.random() * 0.05; // Faster fade
         
         // Make material transparent for fading
         if (particle.material) {
@@ -1016,17 +1016,28 @@ function explodeMesh(mesh) {
     
     explodingMeshes.push(...particles);
     
-    // Remove original mesh from scene
-    mainScene.remove(mesh);
+    // Make the original mesh invisible instead of removing it
+    if (mesh.material) {
+        if (Array.isArray(mesh.material)) {
+            mesh.material.forEach(mat => {
+                mat.transparent = true;
+                mat.opacity = 0;
+            });
+        } else {
+            mesh.material.transparent = true;
+            mesh.material.opacity = 0;
+        }
+    }
+    mesh.visible = false;
     
-    // Remove from clickable and hoverable arrays
+    // Remove from clickable and hoverable arrays so it can't be clicked again
     const clickIndex = clickableObjects.indexOf(mesh);
     if (clickIndex > -1) clickableObjects.splice(clickIndex, 1);
     
     const hoverIndex = hoverableObjects.indexOf(mesh);
     if (hoverIndex > -1) hoverableObjects.splice(hoverIndex, 1);
     
-    console.log(`Mesh ${mesh.name} exploded into ${particleCount} particles`);
+    console.log(`Mesh ${mesh.name} exploded into ${particleCount} particles and is now invisible`);
 }
 
 function onClick(event) {
@@ -1043,13 +1054,6 @@ function onClick(event) {
         console.log('Has meshInfo?', !!meshInfo[clicked.name]);
         console.log('Has audioSegment?', audioSegments[clicked.name]);
         
-        // Check if this is one of the explosive meshes (001-005)
-        const explosiveMeshes = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'];
-        if (explosiveMeshes.includes(clicked.name)) {
-            explodeMesh(clicked);
-            return; // Don't do normal click behavior
-        }
-        
         if (clicked.material && clicked.material.opacity !== undefined) {
             clicked.material.opacity = 0.6;
             setTimeout(() => (clicked.material.opacity = 1), 300);
@@ -1061,9 +1065,18 @@ function onClick(event) {
             updateMonumentCounter();
         }
         
-        // Show popup if mesh has info
+        // Show popup if mesh has info (this now happens BEFORE explosion)
         if (meshInfo[clicked.name]) {
             showPopup(clicked.name);
+        }
+        
+        // Check if this is one of the explosive meshes (001-005) and explode AFTER showing popup
+        const explosiveMeshes = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'];
+        if (explosiveMeshes.includes(clicked.name)) {
+            // Add a slight delay so popup appears first
+            setTimeout(() => {
+                explodeMesh(clicked);
+            }, 100);
         }
         
         const segmentStart = audioSegments[clicked.name];
@@ -1259,8 +1272,8 @@ function animate() {
         particle.position.y += particle.userData.velocity.y;
         particle.position.z += particle.userData.velocity.z;
         
-        // Apply gravity
-        particle.userData.velocity.y -= 0.01;
+        // Apply lighter gravity for smaller effect
+        particle.userData.velocity.y -= 0.003; // Reduced from 0.01 to 0.003
         
         // Rotate particle
         particle.rotation.x += particle.userData.rotationSpeed.x;
