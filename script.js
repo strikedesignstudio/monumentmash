@@ -308,14 +308,27 @@ const playPauseBtn = document.getElementById('play-pause-btn');
 
 // --- MONUMENT COUNTER ---
 const visitedMonuments = new Set();
+const dissolvedStatues = new Set(); // Track dissolved colonial statues
 const monumentCounter = document.getElementById('monument-counter');
 
 function updateMonumentCounter() {
-    const total = Object.keys(audioSegments).length;
-    const visited = visitedMonuments.size;
+    const totalMonuments = Object.keys(audioSegments).length;
+    const visitedCount = visitedMonuments.size;
+    const totalStatues = 5;
+    const dissolvedCount = dissolvedStatues.size;
+    
     if (monumentCounter) {
-        monumentCounter.textContent = `Congratulations! You have visited ${visited}/${total} monuments.`;
-        monumentCounter.style.opacity = visited > 0 ? '1' : '0';
+        if (dissolvedCount > 0) {
+            // Show dissolved statues message
+            monumentCounter.textContent = `Congratulations! You have dissolved ${dissolvedCount}/${totalStatues} colonial statues.`;
+        } else if (visitedCount > 0) {
+            // Show visited monuments message
+            monumentCounter.textContent = `Congratulations! You have visited ${visitedCount}/${totalMonuments} monuments.`;
+        } else {
+            // Default message
+            monumentCounter.textContent = `Congratulations! You have visited 0/${totalMonuments} monuments.`;
+        }
+        monumentCounter.style.opacity = (visitedCount > 0 || dissolvedCount > 0) ? '1' : '0';
     }
 }
 
@@ -1073,6 +1086,10 @@ function onClick(event) {
         // Check if this is one of the explosive meshes (001-005) and explode AFTER showing popup
         const explosiveMeshes = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'];
         if (explosiveMeshes.includes(clicked.name)) {
+            // Track dissolved statue
+            dissolvedStatues.add(clicked.name);
+            updateMonumentCounter();
+            
             // Add a slight delay so popup appears first
             setTimeout(() => {
                 explodeMesh(clicked);
