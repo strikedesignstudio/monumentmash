@@ -255,6 +255,9 @@ let isModelShifted = false;
 let targetModelPosition = new THREE.Vector3(0, -2.5, -5);
 let originalModelPosition = new THREE.Vector3(0, -2.5, -5);
 
+// Store exploding meshes for animation
+const explodingMeshes = [];
+
 // --- AUDIO SETUP ---
 const listener = new THREE.AudioListener();
 mainCamera.add(listener);
@@ -952,6 +955,80 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// --- EXPLOSION EFFECT FOR MESH001-005 ---
+function explodeMesh(mesh) {
+    // Check if this mesh is one of the special meshes (001-005)
+    const explosiveMeshes = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'];
+    if (!explosiveMeshes.includes(mesh.name)) return;
+    
+    console.log('Exploding mesh:', mesh.name);
+    
+    // Create explosion particles from the mesh
+    const particleCount = 50;
+    const particles = [];
+    
+    for (let i = 0; i < particleCount; i++) {
+        // Clone the mesh for each particle (smaller version)
+        const particle = mesh.clone();
+        
+        // Make particle much smaller
+        const scale = 0.1 + Math.random() * 0.2;
+        particle.scale.set(scale, scale, scale);
+        
+        // Position at the original mesh location
+        particle.position.copy(mesh.position);
+        
+        // Random explosion velocity
+        particle.userData.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * 0.5
+        );
+        
+        // Random rotation speed
+        particle.userData.rotationSpeed = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.2,
+            (Math.random() - 0.5) * 0.2,
+            (Math.random() - 0.5) * 0.2
+        );
+        
+        // Fade out over time
+        particle.userData.life = 1.0;
+        particle.userData.fadeSpeed = 0.02 + Math.random() * 0.02;
+        
+        // Make material transparent for fading
+        if (particle.material) {
+            if (Array.isArray(particle.material)) {
+                particle.material = particle.material.map(mat => {
+                    const newMat = mat.clone();
+                    newMat.transparent = true;
+                    return newMat;
+                });
+            } else {
+                particle.material = particle.material.clone();
+                particle.material.transparent = true;
+            }
+        }
+        
+        mainScene.add(particle);
+        particles.push(particle);
+    }
+    
+    explodingMeshes.push(...particles);
+    
+    // Remove original mesh from scene
+    mainScene.remove(mesh);
+    
+    // Remove from clickable and hoverable arrays
+    const clickIndex = clickableObjects.indexOf(mesh);
+    if (clickIndex > -1) clickableObjects.splice(clickIndex, 1);
+    
+    const hoverIndex = hoverableObjects.indexOf(mesh);
+    if (hoverIndex > -1) hoverableObjects.splice(hoverIndex, 1);
+    
+    console.log(`Mesh ${mesh.name} exploded into ${particleCount} particles`);
+}
+
 function onClick(event) {
     const rect = sceneLayer.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -965,6 +1042,13 @@ function onClick(event) {
         console.log('Clicked mesh:', clicked.name);
         console.log('Has meshInfo?', !!meshInfo[clicked.name]);
         console.log('Has audioSegment?', audioSegments[clicked.name]);
+        
+        // Check if this is one of the explosive meshes (001-005)
+        const explosiveMeshes = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'];
+        if (explosiveMeshes.includes(clicked.name)) {
+            explodeMesh(clicked);
+            return; // Don't do normal click behavior
+        }
         
         if (clicked.material && clicked.material.opacity !== undefined) {
             clicked.material.opacity = 0.6;
@@ -1164,6 +1248,57 @@ function animate() {
     // Smooth model position shift for popup
     if (loadedModel && !loadedModel.userData.animationStartTime) {
         loadedModel.position.lerp(targetModelPosition, 0.1);
+    }
+
+    // Animate explosion particles
+    for (let i = explodingMeshes.length - 1; i >= 0; i--) {
+        const particle = explodingMeshes[i];
+        
+        // Update position based on velocity
+        particle.position.x += particle.userData.velocity.x;
+        particle.position.y += particle.userData.velocity.y;
+        particle.position.z += particle.userData.velocity.z;
+        
+        // Apply gravity
+        particle.userData.velocity.y -= 0.01;
+        
+        // Rotate particle
+        particle.rotation.x += particle.userData.rotationSpeed.x;
+        particle.rotation.y += particle.userData.rotationSpeed.y;
+        particle.rotation.z += particle.userData.rotationSpeed.z;
+        
+        // Fade out
+        particle.userData.life -= particle.userData.fadeSpeed;
+        
+        // Update material opacity
+        if (particle.material) {
+            if (Array.isArray(particle.material)) {
+                particle.material.forEach(mat => {
+                    mat.opacity = Math.max(0, particle.userData.life);
+                });
+            } else {
+                particle.material.opacity = Math.max(0, particle.userData.life);
+            }
+        }
+        
+        // Remove particle when fully faded
+        if (particle.userData.life <= 0) {
+            mainScene.remove(particle);
+            
+            // Dispose of cloned materials and geometry
+            if (particle.material) {
+                if (Array.isArray(particle.material)) {
+                    particle.material.forEach(mat => mat.dispose());
+                } else {
+                    particle.material.dispose();
+                }
+            }
+            if (particle.geometry) {
+                particle.geometry.dispose();
+            }
+            
+            explodingMeshes.splice(i, 1);
+        }
     }
 
     if (warpAnimationEnabled && experienceStarted) {
