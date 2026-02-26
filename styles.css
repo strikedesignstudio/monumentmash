@@ -63,7 +63,7 @@ line-height: 1.7em;
 font-size: 1.1em;
 }
 
-#monument-intro {
+.monument-intro {
     color: silver;
     background: black;
     padding: 20px;
@@ -73,11 +73,11 @@ font-size: 1.1em;
     position: relative;
 }
 
-#monument-intro p {
+.monument-intro p {
     margin: 0px;
 }
 
-#monument-intro button {
+.monument-intro button {
 position: absolute;
 right:10px;
 top:10px;
