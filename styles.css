@@ -197,6 +197,15 @@ border: none;
             padding: 0;
         }
 
+/* CSS */
+#start-experience-btn {
+    display: none;
+}
+
+        #start-experience-btn.visible {
+            display: inline-block;
+        }
+
         #play-pause-btn {
             position: fixed;
             bottom: 30px;
