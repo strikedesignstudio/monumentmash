@@ -75,6 +75,12 @@ color: white;
 border: none;
 }
 
+.moncounter {
+    color: white;
+    font-family: plexmono;
+    font-weight: bold;
+}
+
         .modelslider {
     position: absolute;
     margin: 0px auto;
