@@ -409,12 +409,14 @@
     left: 50%; 
     transform: translateX(-50%); 
     color: white; 
-    font-size: 0.9em; 
+    font-size: 0.8em; 
     font-family: breakpoint, sans-serif; 
     padding: 10px 20px;
     opacity: 0; 
     transition: opacity 0.3s; 
     z-index: 90;
+    line-height: 1.1em;
+    text-align: center;
 }
 
 #table-model {
