@@ -36,14 +36,24 @@
             color:#7FFFD4;
         }
 
-#monument-intro {
+#infotopleft {
     z-index: 10;
     max-width: 300px;
     position: fixed;
+    margin: 30px;
+}
+
+#infotopleft span {
+    z-index: 10;
+    max-width: 300px;
+    position: fixed;
+    margin: 30px;
+}
+
+#monument-intro {
     color: silver;
     background: black;
     padding: 15px;
-    margin: 30px;
     line-height: 1.2em;
     border-radius: 15px;
     font-size: 0.9em;
@@ -55,6 +65,10 @@
 
 button.close {
 position: absolute;
+right:10px;
+top:10px;
+background: transparent;
+color: white;
 }
 
         .modelslider {
