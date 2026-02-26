@@ -57,6 +57,7 @@ transform: uppercase;
     line-height: 1.2em;
     border-radius: 15px;
     font-size: 0.9em;
+    position: relative;
 }
 
 #monument-intro p {
