@@ -415,7 +415,7 @@
     opacity: 0; 
     transition: opacity 0.3s; 
     z-index: 90;
-    line-height: 1.1em;
+    line-height: 1.5em;
     text-align: center;
 }
 
