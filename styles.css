@@ -173,7 +173,7 @@ margin-bottom: 10px;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 4px;
             overflow: hidden;
-            margin: 15px auto 20px;
+            margin: 15px auto 10px;
         }
         .loading-bar {
             width: 0%;
