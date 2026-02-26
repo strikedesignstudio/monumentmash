@@ -62,7 +62,7 @@ transform: uppercase;
     margin: 0px;
 }
 
-button.close {
+#monument-intro button {
 position: absolute;
 right:10px;
 top:10px;
