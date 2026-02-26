@@ -41,9 +41,7 @@
     z-index: 10;
     max-width: 350px;
     position: fixed;
-    margin: 30px; 
-    bottom: 0px;
-    right: 0px;
+    margin: 30px auto; 
 }
 
 #infotopleft {
@@ -76,15 +74,6 @@ margin-bottom: 10px;
 
 .monument-intro p {
     margin: 0px;
-}
-
-.monument-intro button {
-position: absolute;
-right:10px;
-top:10px;
-background: transparent;
-color: white;
-border: none;
 }
 
 .moncounter {
