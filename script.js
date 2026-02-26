@@ -323,7 +323,7 @@ function updateMonumentCounter() {
         
         // Show visited monuments if any
         if (visitedCount > 0) {
-            message = `You have visited ${visitedCount}/${totalMonuments} monuments.`;
+            message = `You have visited ${visitedCount}/${totalMonuments} monuments`;
         }
         
         // Add dissolved statues on a new line if any
@@ -331,12 +331,12 @@ function updateMonumentCounter() {
             if (message) {
                 message += '<br>'; // Add line break
             }
-            message += `You have dissolved ${dissolvedCount}/${totalStatues} colonial statues.`;
+            message += `You have dissolved ${dissolvedCount}/${totalStatues} colonial statues`;
         }
         
         // Default message if nothing visited or dissolved
         if (!message) {
-            message = `You have visited 0/${totalMonuments} monuments.`;
+            message = `You have visited 0/${totalMonuments} monuments`;
         }
         
         monumentCounter.innerHTML = message; // Use innerHTML to support <br> tag
