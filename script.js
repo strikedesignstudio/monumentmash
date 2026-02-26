@@ -1209,7 +1209,7 @@ loader.load(
                     hoverableObjects.push(child);
                     
                     // Only add to warpingMeshes if NOT one of mesh001-mesh005
-                    const isStaticMesh = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'].includes(child.name);
+                    const isStaticMesh = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005', 'garaflag'].includes(child.name);
                     
                     if (!isStaticMesh) {
                         warpingMeshes.push(child);
