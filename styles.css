@@ -428,7 +428,7 @@ border: none;
     left: 50%; 
     transform: translateX(-50%); 
     color: white; 
-    font-size: 0.9em; 
+    font-size: 0.7em; 
     font-family: breakpoint, sans-serif; 
     padding: 10px 20px;
     opacity: 0; 
