@@ -39,6 +39,11 @@
     z-index: 10;
     max-width: 300px;
     position: fixed;
+    color: white;
+    background: black;
+    padding: 20px;
+    margin: 30px;
+    line-height: 1.2em;
 }
         .modelslider {
     position: absolute;
