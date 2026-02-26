@@ -19,6 +19,7 @@
   font-weight: normal;
   font-style: normal;
 }
+
 /* Bold Weight */
 @font-face {
   font-family: 'plexmono';
@@ -48,6 +49,9 @@
     font-size: 0.9em;
 }
 
+#monument-intro p{
+    margin: 0px;
+}
 #monument-intro button {
 position: absolute;
 }
