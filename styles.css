@@ -80,15 +80,14 @@ border: none;
     color: white;
     font-weight: bold;
 }
-
 .twocounters {
     padding:15px;
+    font-size: 0.7em;
+    line-height: 0.9em;
 }
 .twocounters p {
     display: block;
     color: silver;
-    font-size: 0.7em;
-    line-height: 0.9em;
 }
 
         .modelslider {
