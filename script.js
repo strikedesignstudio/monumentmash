@@ -302,7 +302,7 @@ const hoverColorMap = {
     "mesh003": 0xffe66d,  // Yellow
     "mesh004": 0xa8e6cf,  // Mint green
     "mesh005": 0xff8b94,   // Pink
-    "garaflag": 0xff6b6b
+    "garaflag": 0xfff000
 };
 
 const playPauseBtn = document.getElementById('play-pause-btn');
