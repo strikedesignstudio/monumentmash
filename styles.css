@@ -38,7 +38,7 @@
 
 #infotopleft {
     z-index: 10;
-    max-width: 300px;
+    max-width: 350px;
     position: fixed;
     margin: 30px;
 }
@@ -49,6 +49,7 @@ font-family:breakpoint;
 padding:0px 0px 15px 15px;
 text-transform: uppercase;
 display: block;
+line-height: 1em;
 }
 
 #monument-intro {
