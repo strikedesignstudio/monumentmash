@@ -160,7 +160,7 @@ const tempColor = new THREE.Color();
 const mainScene = new THREE.Scene();
 const sceneLayer = document.getElementById('scene-layer');
 const mainCamera = new THREE.PerspectiveCamera(70, sceneLayer.clientWidth / sceneLayer.clientHeight, 0.01, 1000);
-mainCamera.position.set(0, 0, 3); // Changed from 5 to 3 for closer starting position
+mainCamera.position.set(0, 0, 3);
 
 const mainRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 mainRenderer.setClearColor(0x000000, 0);
@@ -227,7 +227,7 @@ sceneLayer.addEventListener('touchend', () => {
 sceneLayer.addEventListener('wheel', (e) => {
     e.preventDefault();
     mainCamera.position.z += e.deltaY * 0.01;
-    mainCamera.position.z = Math.max(-5, Math.min(mainCamera.position.z, 20)); // Changed min from 0.1 to -5 to allow much closer zoom
+    mainCamera.position.z = Math.max(-5, Math.min(mainCamera.position.z, 20));
 });
 
 // --- LIGHTS ---
@@ -296,12 +296,11 @@ const hoverColorMap = {
     "Rachid": 0x8800ff,
     "Jermaine": 0xff0088,
     "Dominic": 0x00ff88,
-    // Add the new meshes with custom colors (NO DOTS - matching actual model names)
-    "mesh001": 0xff6b6b,  // Coral red
-    "mesh002": 0x4ecdc4,  // Turquoise
-    "mesh003": 0xffe66d,  // Yellow
-    "mesh004": 0xa8e6cf,  // Mint green
-    "mesh005": 0xff8b94,   // Pink
+    "mesh001": 0xff6b6b,
+    "mesh002": 0x4ecdc4,
+    "mesh003": 0xffe66d,
+    "mesh004": 0xa8e6cf,
+    "mesh005": 0xff8b94,
     "garaflag": 0xfff000
 };
 
@@ -309,8 +308,16 @@ const playPauseBtn = document.getElementById('play-pause-btn');
 
 // --- MONUMENT COUNTER ---
 const visitedMonuments = new Set();
-const dissolvedStatues = new Set(); // Track dissolved colonial statues
+const dissolvedStatues = new Set();
 const monumentCounter = document.getElementById('monument-counter');
+
+function updateTwoCounters() {
+    const dissolvedSpan = document.querySelector('.twocounters p:first-child .moncounter');
+    const visitedSpan = document.querySelector('.twocounters p:last-child .moncounter');
+    
+    if (dissolvedSpan) dissolvedSpan.textContent = `${dissolvedStatues.size}/5`;
+    if (visitedSpan) visitedSpan.textContent = `${visitedMonuments.size}/11`;
+}
 
 function updateMonumentCounter() {
     const totalMonuments = Object.keys(audioSegments).length;
@@ -321,27 +328,26 @@ function updateMonumentCounter() {
     if (monumentCounter) {
         let message = '';
         
-        // Show visited monuments if any
         if (visitedCount > 0) {
             message = `You have visited ${visitedCount}/${totalMonuments} monuments`;
         }
         
-        // Add dissolved statues on a new line if any
         if (dissolvedCount > 0) {
             if (message) {
-                message += '<br>'; // Add line break
+                message += '<br>';
             }
             message += `You have dissolved ${dissolvedCount}/${totalStatues} colonial statues`;
         }
         
-        // Default message if nothing visited or dissolved
         if (!message) {
             message = `You have visited 0/${totalMonuments} monuments`;
         }
         
-        monumentCounter.innerHTML = message; // Use innerHTML to support <br> tag
+        monumentCounter.innerHTML = message;
         monumentCounter.style.opacity = (visitedCount > 0 || dissolvedCount > 0) ? '1' : '0';
     }
+
+    updateTwoCounters();
 }
 
 // --- MODEL SHIFT FUNCTIONS ---
@@ -386,9 +392,7 @@ audioLoader.load('audio/monmashcompnew.mp3', function (buffer) {
     updateLoadingBar();
     console.log('Audio loaded successfully');
     
-    // If experience has already started, try to play
     if (experienceStarted && !isPlaying) {
-        // Ensure audio context is resumed
         if (listener.context.state === 'suspended') {
             listener.context.resume().then(() => {
                 playFrom(0);
@@ -428,7 +432,6 @@ function playFrom(startTime) {
     
     const audioCtx = listener.context;
     
-    // Double-check context state
     if (audioCtx.state === 'suspended') {
         console.log('Audio context suspended, resuming...');
         audioCtx.resume().then(() => {
@@ -460,7 +463,6 @@ async function togglePlayPause() {
     
     const audioCtx = listener.context;
     
-    // CRITICAL: Resume audio context if suspended (mobile requirement)
     if (audioCtx.state === 'suspended') {
         console.log('Resuming audio context in togglePlayPause');
         try {
@@ -484,7 +486,6 @@ async function togglePlayPause() {
     }
 }
 
-// Support both click and touch events for play button
 playPauseBtn.addEventListener('click', togglePlayPause);
 playPauseBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
@@ -504,15 +505,14 @@ let fullTableCamera = null;
 let fullTableRenderer = null;
 let fullTableModel = null;
 let fullTableAnimationId = null;
-let currentModelIndex = 0; // Track which model is currently shown
-const fullModels = ['model/ttexhibition.glb', 'model/tabletopex.glb']; // Array of models to cycle through
+let currentModelIndex = 0;
+const fullModels = ['model/ttexhibition.glb', 'model/tabletopex.glb'];
 
 function animateTableModel() {
     tableAnimationId = requestAnimationFrame(animateTableModel);
     
     if (tableModel) {
-        // Rotate around the Y-axis (vertical center axis) in a plain circle
-        tableModel.rotation.y += 0.01; // Adjust speed as needed (0.01 = slow, 0.02 = faster)
+        tableModel.rotation.y += 0.01;
     }
     
     tableRenderer.render(tableScene, tableCamera);
@@ -528,7 +528,6 @@ function animateFullTableModel() {
     fullTableRenderer.render(fullTableScene, fullTableCamera);
 }
 
-// IMPROVED: Better cleanup function for table model
 function cleanupTableModel() {
     if (tableAnimationId) {
         cancelAnimationFrame(tableAnimationId);
@@ -538,19 +537,16 @@ function cleanupTableModel() {
     if (tableRenderer) {
         const tableContainer = document.getElementById('table-model');
         
-        // Remove canvas from DOM
         if (tableContainer && tableRenderer.domElement.parentNode === tableContainer) {
             tableContainer.removeChild(tableRenderer.domElement);
         }
         
-        // Dispose of renderer and force context loss
         tableRenderer.dispose();
         tableRenderer.forceContextLoss();
         tableRenderer = null;
     }
     
     if (tableModel) {
-        // Don't dispose geometry/materials since we're cloning from main scene
         tableScene.remove(tableModel);
         tableModel = null;
     }
@@ -568,26 +564,22 @@ function initTableModel(meshName) {
         return;
     }
     
-    // IMPROVED: Clean up previous model completely
     cleanupTableModel();
     
-    // Setup new scene
     tableScene = new THREE.Scene();
-    // Transparent background - no background color set
     
     const width = tableContainer.clientWidth;
     const height = tableContainer.clientHeight;
     
     tableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-    tableCamera.position.set(0, 0, 5); // Changed from (0, 3, 5) to (0, 0, 5) to center vertically
+    tableCamera.position.set(0, 0, 5);
     
     tableRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    tableRenderer.setClearColor(0x000000, 0); // Transparent background
+    tableRenderer.setClearColor(0x000000, 0);
     tableRenderer.setSize(width, height);
     tableRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     tableContainer.appendChild(tableRenderer.domElement);
     
-    // Add lights - brighter lighting setup
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     tableScene.add(ambientLight);
     
@@ -603,7 +595,6 @@ function initTableModel(meshName) {
     pointLight.position.set(0, 10, 0);
     tableScene.add(pointLight);
     
-    // Find and clone the mesh from the main scene
     if (!loadedModel) {
         console.error('Main model not loaded yet');
         return;
@@ -621,10 +612,8 @@ function initTableModel(meshName) {
         return;
     }
     
-    // Clone the mesh
     tableModel = originalMesh.clone();
     
-    // Clone the material so hover effects don't apply to popup model
     if (tableModel.material) {
         if (Array.isArray(tableModel.material)) {
             tableModel.material = tableModel.material.map(mat => mat.clone());
@@ -641,16 +630,13 @@ function initTableModel(meshName) {
         }
     }
     
-    // Create a wrapper object to hold the cloned mesh
     const wrapper = new THREE.Object3D();
     wrapper.add(tableModel);
     
-    // Reset the cloned mesh to upright position
     tableModel.position.set(0, 0, 0);
-    tableModel.rotation.set(0, 0, 0); // Start from upright position
+    tableModel.rotation.set(0, 0, 0);
     tableModel.scale.set(1, 1, 1);
     
-    // Auto-scale and center the wrapper
     const box = new THREE.Box3().setFromObject(wrapper);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
@@ -659,17 +645,14 @@ function initTableModel(meshName) {
     const scale = 3 / maxDim;
     wrapper.scale.set(scale, scale, scale);
     
-    // Center the model vertically
     wrapper.position.set(0, 0, 0);
     
-    // Offset the mesh to center it properly
     tableModel.position.x = -center.x;
     tableModel.position.y = -center.y;
     tableModel.position.z = -center.z;
     
     tableScene.add(wrapper);
     
-    // Store reference to wrapper for animation
     tableModel = wrapper;
     
     console.log(`Cloned mesh "${meshName}" successfully`);
@@ -677,7 +660,6 @@ function initTableModel(meshName) {
     animateTableModel();
 }
 
-// IMPROVED: Better cleanup function for full table model
 function cleanupFullTableModel() {
     if (fullTableAnimationId) {
         cancelAnimationFrame(fullTableAnimationId);
@@ -687,12 +669,10 @@ function cleanupFullTableModel() {
     if (fullTableRenderer) {
         const fullTableContainer = document.getElementById('table-model-full');
         
-        // Remove canvas from DOM
         if (fullTableContainer && fullTableRenderer.domElement.parentNode === fullTableContainer) {
             fullTableContainer.removeChild(fullTableRenderer.domElement);
         }
         
-        // Dispose of renderer and force context loss
         fullTableRenderer.dispose();
         fullTableRenderer.forceContextLoss();
         fullTableRenderer = null;
@@ -728,10 +708,8 @@ function initFullTableModel(modelPath) {
         return;
     }
     
-    // IMPROVED: Clean up previous model completely
     cleanupFullTableModel();
     
-    // Setup new scene
     fullTableScene = new THREE.Scene();
     
     let width = tableContainer.clientWidth || 800;
@@ -753,7 +731,6 @@ function initFullTableModel(modelPath) {
     fullTableRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     tableContainer.appendChild(fullTableRenderer.domElement);
     
-    // Add lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     fullTableScene.add(ambientLight);
     
@@ -761,7 +738,6 @@ function initFullTableModel(modelPath) {
     directionalLight.position.set(5, 10, 7.5);
     fullTableScene.add(directionalLight);
     
-    // Load the GLB model
     const fullTableLoader = new THREE.GLTFLoader();
     
     fullTableLoader.load(
@@ -769,33 +745,26 @@ function initFullTableModel(modelPath) {
         function (gltf) {
             fullTableModel = gltf.scene;
             
-            // Auto-scale and center the model
             const box = new THREE.Box3().setFromObject(fullTableModel);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
             
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3 / maxDim; // Reduced from 5 to 3 for smaller model
+            const scale = 3 / maxDim;
             
-            // Create wrapper to hold the model
             const wrapper = new THREE.Object3D();
             wrapper.add(fullTableModel);
             
-            // Scale the wrapper
             wrapper.scale.set(scale, scale, scale);
             
-            // Offset the model inside the wrapper to center it
             fullTableModel.position.x = -center.x;
             fullTableModel.position.y = -center.y;
             fullTableModel.position.z = -center.z;
             
-            // Move the wrapper up significantly more toward center
-            wrapper.position.y = size.y * scale * 1.5; // Increased from 0.5 to 1.5
+            wrapper.position.y = size.y * scale * 1.5;
             
-            // Add wrapper to scene (not the model directly)
             fullTableScene.add(wrapper);
             
-            // Store wrapper reference for animation
             fullTableModel = wrapper;
             
             animateFullTableModel();
@@ -816,7 +785,6 @@ function initFullTableModel(modelPath) {
     );
 }
 
-// NEW: Function to load next model in the slider
 function loadNextFullModel() {
     currentModelIndex = (currentModelIndex + 1) % fullModels.length;
     const nextModel = fullModels[currentModelIndex];
@@ -824,7 +792,6 @@ function loadNextFullModel() {
     initFullTableModel(nextModel);
 }
 
-// NEW: Function to load previous model in the slider
 function loadPreviousFullModel() {
     currentModelIndex = (currentModelIndex - 1 + fullModels.length) % fullModels.length;
     const previousModel = fullModels[currentModelIndex];
@@ -834,10 +801,9 @@ function loadPreviousFullModel() {
 
 function closeFullTableModel() {
     cleanupFullTableModel();
-    currentModelIndex = 0; // Reset to first model when closing
+    currentModelIndex = 0;
 }
 
-// Handle window resize for table model
 window.addEventListener('resize', function() {
     if (tableRenderer && tableCamera) {
         const tableContainer = document.getElementById('table-model');
@@ -864,7 +830,6 @@ window.addEventListener('resize', function() {
     }
 });
 
-// Auto-load the tabletop model when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     const infoBtn = document.getElementById('about-page-btn');
     
@@ -872,7 +837,6 @@ document.addEventListener('DOMContentLoaded', function() {
         infoBtn.addEventListener('click', function() {
             const fullTableContainer = document.getElementById('table-model-full');
             
-            // Only load if not already loaded
             if (fullTableContainer && !fullTableRenderer) {
                 console.log('Info button clicked, loading first model');
                 setTimeout(() => {
@@ -884,7 +848,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('about-page-btn button not found');
     }
     
-    // NEW: Setup slider navigation buttons
     const nextBtn = document.getElementById('model-next-btn');
     const prevBtn = document.getElementById('model-prev-btn');
     
@@ -919,10 +882,9 @@ function showPopup(meshName) {
     const description = popup.querySelector('.mesh-popup-description');
     
     if (title) title.textContent = info.title;
-    if (subtitle) subtitle.textContent = info.subtitle || ''; // Set subtitle if it exists
+    if (subtitle) subtitle.textContent = info.subtitle || '';
     if (description) description.textContent = info.description;
     
-    // Load the corresponding 3D model into table-model div
     initTableModel(meshName);
     
     popup.classList.add('active');
@@ -935,15 +897,12 @@ function closePopup() {
         popup.classList.remove('active');
     }
     
-    // IMPROVED: Use new cleanup function
     cleanupTableModel();
     
     resetModelPosition();
 }
 
-// Setup popup close handlers when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Load mesh info from HTML
     const meshInfoElements = document.querySelectorAll('.mesh-info-item');
     console.log('Found mesh info elements:', meshInfoElements.length);
     meshInfoElements.forEach(item => {
@@ -955,7 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (name && title && description) {
             meshInfo[name] = { 
                 title, 
-                subtitle: subtitle || '', // Include subtitle, default to empty string
+                subtitle: subtitle || '',
                 description 
             };
             console.log('Loaded mesh info for:', name);
@@ -982,46 +941,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- EXPLOSION EFFECT FOR MESH001-005 ---
 function explodeMesh(mesh) {
-    // Check if this mesh is one of the special meshes (001-005)
     const explosiveMeshes = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'];
     if (!explosiveMeshes.includes(mesh.name)) return;
     
     console.log('Exploding mesh:', mesh.name);
     
-    // Create small explosion particles from the mesh
-    const particleCount = 20; // Reduced from 50 to 20 for smaller effect
+    const particleCount = 20;
     const particles = [];
     
     for (let i = 0; i < particleCount; i++) {
-        // Clone the mesh for each particle (smaller version)
         const particle = mesh.clone();
         
-        // Make particles smaller
-        const scale = 0.05 + Math.random() * 0.1; // Reduced scale
+        const scale = 0.05 + Math.random() * 0.1;
         particle.scale.set(scale, scale, scale);
         
-        // Position at the original mesh location
         particle.position.copy(mesh.position);
         
-        // Smaller, tighter explosion velocity
         particle.userData.velocity = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.15, // Reduced from 0.5 to 0.15
+            (Math.random() - 0.5) * 0.15,
             (Math.random() - 0.5) * 0.15,
             (Math.random() - 0.5) * 0.15
         );
         
-        // Random rotation speed
         particle.userData.rotationSpeed = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.1, // Reduced from 0.2 to 0.1
+            (Math.random() - 0.5) * 0.1,
             (Math.random() - 0.5) * 0.1,
             (Math.random() - 0.5) * 0.1
         );
         
-        // Fade out faster
         particle.userData.life = 1.0;
-        particle.userData.fadeSpeed = 0.05 + Math.random() * 0.05; // Faster fade
+        particle.userData.fadeSpeed = 0.05 + Math.random() * 0.05;
         
-        // Make material transparent for fading
         if (particle.material) {
             if (Array.isArray(particle.material)) {
                 particle.material = particle.material.map(mat => {
@@ -1041,7 +991,6 @@ function explodeMesh(mesh) {
     
     explodingMeshes.push(...particles);
     
-    // Make the original mesh invisible instead of removing it
     if (mesh.material) {
         if (Array.isArray(mesh.material)) {
             mesh.material.forEach(mat => {
@@ -1055,7 +1004,6 @@ function explodeMesh(mesh) {
     }
     mesh.visible = false;
     
-    // Remove from clickable and hoverable arrays so it can't be clicked again
     const clickIndex = clickableObjects.indexOf(mesh);
     if (clickIndex > -1) clickableObjects.splice(clickIndex, 1);
     
@@ -1084,25 +1032,20 @@ function onClick(event) {
             setTimeout(() => (clicked.material.opacity = 1), 300);
         }
         
-        // Track visited monuments
         if (audioSegments[clicked.name] !== undefined) {
             visitedMonuments.add(clicked.name);
             updateMonumentCounter();
         }
         
-        // Show popup if mesh has info (this now happens BEFORE explosion)
         if (meshInfo[clicked.name]) {
             showPopup(clicked.name);
         }
         
-        // Check if this is one of the explosive meshes (001-005) and explode AFTER showing popup
         const explosiveMeshes = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005'];
         if (explosiveMeshes.includes(clicked.name)) {
-            // Track dissolved statue
             dissolvedStatues.add(clicked.name);
             updateMonumentCounter();
             
-            // Add a slight delay so popup appears first
             setTimeout(() => {
                 explodeMesh(clicked);
             }, 100);
@@ -1198,7 +1141,6 @@ loader.load(
 
         model.traverse((child) => {
             if (child.isMesh && !meshesToRemove.includes(child.name)) {
-                // DEBUG: Log all mesh names
                 console.log('Found mesh:', child.name);
                 
                 clickableObjects.push(child);
@@ -1208,7 +1150,6 @@ loader.load(
                     console.log('Added to hoverable:', child.name);
                     hoverableObjects.push(child);
                     
-                    // Only add to warpingMeshes if NOT one of mesh001-mesh005
                     const isStaticMesh = ['mesh001', 'mesh002', 'mesh003', 'mesh004', 'mesh005', 'garaflag'].includes(child.name);
                     
                     if (!isStaticMesh) {
@@ -1266,7 +1207,6 @@ window.addEventListener("resize", function () {
 function animate() {
     requestAnimationFrame(animate);
 
-    // Animate model zoom-in during first 5 seconds
     if (experienceStarted && loadedModel && loadedModel.userData.animationStartTime) {
         const elapsed = performance.now() - loadedModel.userData.animationStartTime;
         const progress = Math.min(elapsed / loadedModel.userData.animationDuration, 1);
@@ -1287,32 +1227,25 @@ function animate() {
         }
     }
     
-    // Smooth model position shift for popup
     if (loadedModel && !loadedModel.userData.animationStartTime) {
         loadedModel.position.lerp(targetModelPosition, 0.1);
     }
 
-    // Animate explosion particles
     for (let i = explodingMeshes.length - 1; i >= 0; i--) {
         const particle = explodingMeshes[i];
         
-        // Update position based on velocity
         particle.position.x += particle.userData.velocity.x;
         particle.position.y += particle.userData.velocity.y;
         particle.position.z += particle.userData.velocity.z;
         
-        // Apply lighter gravity for smaller effect
-        particle.userData.velocity.y -= 0.003; // Reduced from 0.01 to 0.003
+        particle.userData.velocity.y -= 0.003;
         
-        // Rotate particle
         particle.rotation.x += particle.userData.rotationSpeed.x;
         particle.rotation.y += particle.userData.rotationSpeed.y;
         particle.rotation.z += particle.userData.rotationSpeed.z;
         
-        // Fade out
         particle.userData.life -= particle.userData.fadeSpeed;
         
-        // Update material opacity
         if (particle.material) {
             if (Array.isArray(particle.material)) {
                 particle.material.forEach(mat => {
@@ -1323,11 +1256,9 @@ function animate() {
             }
         }
         
-        // Remove particle when fully faded
         if (particle.userData.life <= 0) {
             mainScene.remove(particle);
             
-            // Dispose of cloned materials and geometry
             if (particle.material) {
                 if (Array.isArray(particle.material)) {
                     particle.material.forEach(mat => mat.dispose());
