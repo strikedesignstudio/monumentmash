@@ -135,6 +135,7 @@ border: none;
             height: 100%;
             z-index: 5;
         }
+
         #loading-screen {
             position: fixed;
             top: 0;
@@ -202,6 +203,9 @@ border: none;
     display: none;
     background: black;
     color:white;
+    font-size: 1.5em;
+    text-transform: uppercase;
+    font-family: plexmono;
 }
 
         #start-experience-btn.visible {
