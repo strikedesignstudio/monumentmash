@@ -301,7 +301,8 @@ const hoverColorMap = {
     "mesh002": 0x4ecdc4,  // Turquoise
     "mesh003": 0xffe66d,  // Yellow
     "mesh004": 0xa8e6cf,  // Mint green
-    "mesh005": 0xff8b94   // Pink
+    "mesh005": 0xff8b94,   // Pink
+    "garaflag": 0xff6b6b
 };
 
 const playPauseBtn = document.getElementById('play-pause-btn');
