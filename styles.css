@@ -47,7 +47,7 @@
     border-radius: 20px;
 }
 
-#monument-intro button {
+#monument-intro.close {
 position: absolute;
 }
 
