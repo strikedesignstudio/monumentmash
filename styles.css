@@ -46,6 +46,7 @@
 #infotopleft span {
 color: white;
 padding:0px 0px 15px;
+transform: uppercase;
 }
 
 #monument-intro {
