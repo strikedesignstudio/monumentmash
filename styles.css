@@ -56,7 +56,7 @@
 .introtitle {
 color: white;
 font-family:breakpoint;
-padding:0px 0px 15px 15px;
+padding-bottom:15px;
 text-transform: uppercase;
 display: block;
 line-height: 1.7em;
@@ -91,7 +91,6 @@ border: none;
     font-weight: bold;
 }
 .twocounters {
-    padding:15px;
     font-size: 0.8em;
     line-height: 0.9em;
 }
