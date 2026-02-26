@@ -83,6 +83,13 @@ border: none;
     padding: 15px;
 }
 
+.twocounters {
+    padding:15px;
+}
+.twocounters p{
+    display: block;
+}
+
         .modelslider {
     position: absolute;
     margin: 0px auto;
