@@ -43,7 +43,7 @@
     margin: 30px;
 }
 
-#infotopleft span {
+.introtitle {
 color: white;
 font-family:breakpoint;
 padding:0px 0px 15px 15px;
