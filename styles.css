@@ -226,7 +226,6 @@ border: none;
   white-space: nowrap;
   will-change: box-shadow,transform;
   font-size: 18px;
-  font-family: breakpoint;
   text-transform: uppercase;
 }
 
@@ -279,7 +278,7 @@ border: none;
             right: 30px;
             z-index: 20;
             color: white;
-            font-size: 0.9em;
+            font-size: 0.8em;
             text-transform: uppercase;
             border: none;
             background: none;
