@@ -34,7 +34,11 @@
         a {
             color:#7FFFD4;
         }
-
+        
+#monument-intro {
+    z-index: 10;
+    max-width: 300px;
+}
         .modelslider {
     position: absolute;
     margin: 0px auto;
