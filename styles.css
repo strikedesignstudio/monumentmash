@@ -53,9 +53,9 @@ text-transform: uppercase;
 #monument-intro {
     color: silver;
     background: black;
-    padding: 15px;
+    padding: 20px;
     line-height: 1.2em;
-    border-radius: 15px;
+    border-radius: 10px;
     font-size: 0.9em;
     position: relative;
 }
