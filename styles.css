@@ -52,7 +52,8 @@
 #monument-intro p{
     margin: 0px;
 }
-#monument-intro button {
+
+button.close {
 position: absolute;
 }
 
