@@ -399,6 +399,8 @@
     font-size: 0.9em;
     color: silver;
     margin: 0 0 20px 0;
+    max-height: 200px;
+    overflow: auto;
 }
 
 #monument-counter {
