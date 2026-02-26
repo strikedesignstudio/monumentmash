@@ -48,6 +48,7 @@ color: white;
 font-family:breakpoint;
 padding:0px 0px 15px 15px;
 text-transform: uppercase;
+display: block;
 }
 
 #monument-intro {
