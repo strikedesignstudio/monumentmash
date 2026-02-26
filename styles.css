@@ -46,6 +46,11 @@
     line-height: 1.2em;
     border-radius: 20px;
 }
+
+#monument-intro button {
+position: absolute;
+}
+
         .modelslider {
     position: absolute;
     margin: 0px auto;
