@@ -80,7 +80,6 @@ border: none;
     color: white;
     font-family: plexmono;
     font-weight: bold;
-    padding: 15px;
 }
 
 .twocounters {
@@ -89,6 +88,7 @@ border: none;
 .twocounters p {
     display: block;
     color: silver;
+    font-size: 0.9em;
 }
 
         .modelslider {
