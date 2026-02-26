@@ -49,7 +49,6 @@ async function startExperience() {
     }
     
     playPauseBtn.classList.add('visible');
-    updateMonumentCounter();
     
     // Try to start audio
     try {
@@ -311,14 +310,83 @@ const visitedMonuments = new Set();
 const dissolvedStatues = new Set();
 const monumentCounter = document.getElementById('monument-counter');
 
+// Track whether the intro sequence has already played
+let introSequencePlayed = false;
+
+// --- INTRO MESSAGE SEQUENCE ---
+// Called once after the model finishes zooming in (triggered in the animate loop)
+function playIntroSequence() {
+    if (introSequencePlayed) return;
+    introSequencePlayed = true;
+
+    const messages = [
+        "You have entered Deptford Town Hall.",
+        "Click on a floating monument to hear Lewisham voices.",
+        "Click on a colonial statue and dissolve it into space."
+    ];
+
+    // Helper: fade in a message, hold for 5s, fade out, then call onComplete
+    function showMessage(text, onComplete) {
+        monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
+        monumentCounter.innerHTML = text;
+        monumentCounter.style.opacity = '1';
+
+        setTimeout(() => {
+            monumentCounter.style.opacity = '0';
+            // Wait for fade-out transition to finish before moving to next step
+            setTimeout(() => {
+                if (onComplete) onComplete();
+            }, 700);
+        }, 5000);
+    }
+
+    // Chain the three intro messages, then show the visitor counters briefly
+    showMessage(messages[0], () => {
+        showMessage(messages[1], () => {
+            showMessage(messages[2], () => {
+                showVisitorCountersBriefly();
+            });
+        });
+    });
+}
+
+// Shows the live visitor counters, holds 5s, then fades out
+// After this the counter only reappears when the user clicks something
+function showVisitorCountersBriefly() {
+    const totalMonuments = Object.keys(audioSegments).length;
+    const visitedCount = visitedMonuments.size;
+    const totalStatues = 5;
+    const dissolvedCount = dissolvedStatues.size;
+
+    let message = visitedCount > 0
+        ? `You have visited ${visitedCount}/${totalMonuments} monuments`
+        : `You have visited 0/${totalMonuments} monuments`;
+
+    if (dissolvedCount > 0) {
+        message += `<br>You have dissolved ${dissolvedCount}/${totalStatues} colonial statues`;
+    }
+
+    monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
+    monumentCounter.innerHTML = message;
+    monumentCounter.style.opacity = '1';
+
+    updateTwoCounters();
+
+    setTimeout(() => {
+        monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
+        monumentCounter.style.opacity = '0';
+    }, 5000);
+}
+
+// --- TWO-COUNTER UPDATE ---
 function updateTwoCounters() {
     const dissolvedSpan = document.querySelector('.twocounters p:first-child .moncounter');
     const visitedSpan = document.querySelector('.twocounters p:last-child .moncounter');
-    
     if (dissolvedSpan) dissolvedSpan.textContent = `${dissolvedStatues.size}/5`;
     if (visitedSpan) visitedSpan.textContent = `${visitedMonuments.size}/11`;
 }
 
+// Called whenever a monument is visited or a statue is dissolved
 function updateMonumentCounter() {
     const totalMonuments = Object.keys(audioSegments).length;
     const visitedCount = visitedMonuments.size;
@@ -326,25 +394,26 @@ function updateMonumentCounter() {
     const dissolvedCount = dissolvedStatues.size;
     
     if (monumentCounter) {
-        let message = '';
-        
-        if (visitedCount > 0) {
-            message = `You have visited ${visitedCount}/${totalMonuments} monuments`;
-        }
-        
+        let message = visitedCount > 0
+            ? `You have visited ${visitedCount}/${totalMonuments} monuments`
+            : `You have visited 0/${totalMonuments} monuments`;
+
         if (dissolvedCount > 0) {
-            if (message) {
-                message += '<br>';
-            }
-            message += `You have dissolved ${dissolvedCount}/${totalStatues} colonial statues`;
-        }
-        
-        if (!message) {
-            message = `You have visited 0/${totalMonuments} monuments`;
+            message += `<br>You have dissolved ${dissolvedCount}/${totalStatues} colonial statues`;
         }
         
         monumentCounter.innerHTML = message;
-        monumentCounter.style.opacity = (visitedCount > 0 || dissolvedCount > 0) ? '1' : '0';
+
+        // Fade in, hold 5 seconds, then fade out
+        monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
+        monumentCounter.style.opacity = '1';
+
+        // Clear any existing hide timer so rapid clicks don't conflict
+        if (monumentCounter._hideTimer) clearTimeout(monumentCounter._hideTimer);
+        monumentCounter._hideTimer = setTimeout(() => {
+            monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
+            monumentCounter.style.opacity = '0';
+        }, 5000);
     }
 
     updateTwoCounters();
@@ -380,12 +449,11 @@ function shiftModelForPopup() {
 
 function resetModelPosition() {
     if (!loadedModel || !isModelShifted) return;
-    
     isModelShifted = false;
     targetModelPosition.copy(originalModelPosition);
 }
 
-// Modified audio loader
+// --- AUDIO LOADER ---
 audioLoader.load('audio/monmashcompnew.mp3', function (buffer) {
     audioBufferShared = buffer;
     loadingProgress.audio = 100;
@@ -510,21 +578,17 @@ const fullModels = ['model/ttexhibition.glb', 'model/tabletopex.glb'];
 
 function animateTableModel() {
     tableAnimationId = requestAnimationFrame(animateTableModel);
-    
     if (tableModel) {
         tableModel.rotation.y += 0.01;
     }
-    
     tableRenderer.render(tableScene, tableCamera);
 }
 
 function animateFullTableModel() {
     fullTableAnimationId = requestAnimationFrame(animateFullTableModel);
-    
     if (fullTableModel) {
         fullTableModel.rotation.y += 0.005;
     }
-    
     fullTableRenderer.render(fullTableScene, fullTableCamera);
 }
 
@@ -536,11 +600,9 @@ function cleanupTableModel() {
     
     if (tableRenderer) {
         const tableContainer = document.getElementById('table-model');
-        
         if (tableContainer && tableRenderer.domElement.parentNode === tableContainer) {
             tableContainer.removeChild(tableRenderer.domElement);
         }
-        
         tableRenderer.dispose();
         tableRenderer.forceContextLoss();
         tableRenderer = null;
@@ -553,7 +615,6 @@ function cleanupTableModel() {
     
     tableScene = null;
     tableCamera = null;
-    
     console.log('Table model cleaned up');
 }
 
@@ -618,15 +679,11 @@ function initTableModel(meshName) {
         if (Array.isArray(tableModel.material)) {
             tableModel.material = tableModel.material.map(mat => mat.clone());
             tableModel.material.forEach(mat => {
-                if (mat.color) {
-                    mat.color.setHex(0xffffff);
-                }
+                if (mat.color) mat.color.setHex(0xffffff);
             });
         } else {
             tableModel.material = tableModel.material.clone();
-            if (tableModel.material.color) {
-                tableModel.material.color.setHex(0xffffff);
-            }
+            if (tableModel.material.color) tableModel.material.color.setHex(0xffffff);
         }
     }
     
@@ -644,7 +701,6 @@ function initTableModel(meshName) {
     const maxDim = Math.max(size.x, size.y, size.z);
     const scale = 3 / maxDim;
     wrapper.scale.set(scale, scale, scale);
-    
     wrapper.position.set(0, 0, 0);
     
     tableModel.position.x = -center.x;
@@ -652,11 +708,9 @@ function initTableModel(meshName) {
     tableModel.position.z = -center.z;
     
     tableScene.add(wrapper);
-    
     tableModel = wrapper;
     
     console.log(`Cloned mesh "${meshName}" successfully`);
-    
     animateTableModel();
 }
 
@@ -668,11 +722,9 @@ function cleanupFullTableModel() {
     
     if (fullTableRenderer) {
         const fullTableContainer = document.getElementById('table-model-full');
-        
         if (fullTableContainer && fullTableRenderer.domElement.parentNode === fullTableContainer) {
             fullTableContainer.removeChild(fullTableRenderer.domElement);
         }
-        
         fullTableRenderer.dispose();
         fullTableRenderer.forceContextLoss();
         fullTableRenderer = null;
@@ -697,7 +749,6 @@ function cleanupFullTableModel() {
     
     fullTableScene = null;
     fullTableCamera = null;
-    
     console.log('Full table model cleaned up');
 }
 
@@ -709,7 +760,6 @@ function initFullTableModel(modelPath) {
     }
     
     cleanupFullTableModel();
-    
     fullTableScene = new THREE.Scene();
     
     let width = tableContainer.clientWidth || 800;
@@ -754,7 +804,6 @@ function initFullTableModel(modelPath) {
             
             const wrapper = new THREE.Object3D();
             wrapper.add(fullTableModel);
-            
             wrapper.scale.set(scale, scale, scale);
             
             fullTableModel.position.x = -center.x;
@@ -764,15 +813,12 @@ function initFullTableModel(modelPath) {
             wrapper.position.y = size.y * scale * 1.5;
             
             fullTableScene.add(wrapper);
-            
             fullTableModel = wrapper;
             
             animateFullTableModel();
             
             console.log(`Loaded full model from ${modelPath}`, {
-                center: center,
-                size: size,
-                scale: scale,
+                center, size, scale,
                 yOffset: size.y * scale * 1.5
             });
         },
@@ -810,7 +856,6 @@ window.addEventListener('resize', function() {
         if (tableContainer) {
             const width = tableContainer.clientWidth;
             const height = tableContainer.clientHeight;
-            
             tableCamera.aspect = width / height;
             tableCamera.updateProjectionMatrix();
             tableRenderer.setSize(width, height);
@@ -822,7 +867,6 @@ window.addEventListener('resize', function() {
         if (fullTableContainer) {
             const width = fullTableContainer.clientWidth;
             const height = fullTableContainer.clientHeight;
-            
             fullTableCamera.aspect = width / height;
             fullTableCamera.updateProjectionMatrix();
             fullTableRenderer.setSize(width, height);
@@ -836,7 +880,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (infoBtn) {
         infoBtn.addEventListener('click', function() {
             const fullTableContainer = document.getElementById('table-model-full');
-            
             if (fullTableContainer && !fullTableRenderer) {
                 console.log('Info button clicked, loading first model');
                 setTimeout(() => {
@@ -886,7 +929,6 @@ function showPopup(meshName) {
     if (description) description.textContent = info.description;
     
     initTableModel(meshName);
-    
     popup.classList.add('active');
     shiftModelForPopup();
 }
@@ -896,9 +938,7 @@ function closePopup() {
     if (popup) {
         popup.classList.remove('active');
     }
-    
     cleanupTableModel();
-    
     resetModelPosition();
 }
 
@@ -954,7 +994,6 @@ function explodeMesh(mesh) {
         
         const scale = 0.05 + Math.random() * 0.1;
         particle.scale.set(scale, scale, scale);
-        
         particle.position.copy(mesh.position);
         
         particle.userData.velocity = new THREE.Vector3(
@@ -1103,7 +1142,6 @@ loader.load(
         loadedModel = model;
         
         model.scale.set(0.026, 0.026, 0.026);
-        
         model.position.set(0, -2.5, -50);
         
         model.userData.finalPosition = new THREE.Vector3(0, -2.5, -5);
@@ -1207,6 +1245,7 @@ window.addEventListener("resize", function () {
 function animate() {
     requestAnimationFrame(animate);
 
+    // Animate model zoom-in
     if (experienceStarted && loadedModel && loadedModel.userData.animationStartTime) {
         const elapsed = performance.now() - loadedModel.userData.animationStartTime;
         const progress = Math.min(elapsed / loadedModel.userData.animationDuration, 1);
@@ -1224,13 +1263,18 @@ function animate() {
             loadedModel.position.copy(loadedModel.userData.finalPosition);
             originalModelPosition.copy(loadedModel.userData.finalPosition);
             targetModelPosition.copy(loadedModel.userData.finalPosition);
+
+            // Trigger intro message sequence now that the model has settled
+            playIntroSequence();
         }
     }
     
+    // Smooth model position shift for popup
     if (loadedModel && !loadedModel.userData.animationStartTime) {
         loadedModel.position.lerp(targetModelPosition, 0.1);
     }
 
+    // Animate explosion particles
     for (let i = explodingMeshes.length - 1; i >= 0; i--) {
         const particle = explodingMeshes[i];
         
