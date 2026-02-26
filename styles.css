@@ -200,6 +200,8 @@ border: none;
 /* CSS */
 #start-experience-btn {
     display: none;
+    background: black;
+    color:white;
 }
 
         #start-experience-btn.visible {
