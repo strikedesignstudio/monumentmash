@@ -375,7 +375,7 @@ function showVisitorCountersBriefly() {
     setTimeout(() => {
         monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
         monumentCounter.style.opacity = '0';
-    }, 5000);
+    }, 2000);
 }
 
 // --- TWO-COUNTER UPDATE ---
