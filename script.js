@@ -1199,9 +1199,9 @@ loader.load(
 // x/y: radius 250–550 local → ~6.5–14 world units of spread
 // z:   100–350 local → world z roughly -2 to +4 (forward of the
 //      model, around/in front of the viewer) avoiding centre overlap.
-const radius = 100 + Math.random() * 150;
+const radius = 125 + Math.random() * 250;
 const theta = Math.random() * Math.PI * 2;
-const phi = (0.1 + Math.random() * 0.4) * Math.PI; // avoid z-axis poles
+const phi = (0.15 + Math.random() * 0.7) * Math.PI; // avoid z-axis poles
 
 child.position.x = radius * Math.sin(phi) * Math.cos(theta);
 child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
