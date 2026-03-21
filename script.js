@@ -1201,7 +1201,7 @@ loader.load(
 //      model, around/in front of the viewer) avoiding centre overlap.
 const radius = 75 + Math.random() * 100;
 const theta = Math.random() * Math.PI * 2;
-const phi = (0.15 + Math.random() * 0.7) * Math.PI; // avoid z-axis poles
+const phi = (0.1 + Math.random() * 0.4) * Math.PI; // avoid z-axis poles
 
 child.position.x = radius * Math.sin(phi) * Math.cos(theta);
 child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
