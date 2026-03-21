@@ -1207,7 +1207,7 @@ child.position.x = radius * Math.sin(phi) * Math.cos(theta);
 child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
 child.position.z = 20 + Math.random() * 70; // forward bias in local space
                         
-                        child.scale.multiplyScalar(8);
+                        child.scale.multiplyScalar(4);
                         child.userData.velocityX = (Math.random() - 0.5) * 0.02;
                         child.userData.velocityY = (Math.random() - 0.5) * 0.02;
                         child.userData.velocityZ = (Math.random() - 0.5) * 0.02;
