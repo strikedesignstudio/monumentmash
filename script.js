@@ -1399,7 +1399,7 @@ function animate() {
         const dz = mesh.position.z - centerZ;
         const distanceFromCenter = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-        const maxRadius = 700;
+        const maxRadius = 500;
         if (distanceFromCenter > maxRadius) {
             mesh.userData.velocityX = -mesh.userData.velocityX * 0.8 + (Math.random() - 0.5) * 0.01;
             mesh.userData.velocityY = -mesh.userData.velocityY * 0.8 + (Math.random() - 0.5) * 0.01;
