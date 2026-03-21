@@ -1194,18 +1194,18 @@ loader.load(
                         warpingMeshes.push(child);
                         child.userData.originalPosition = child.position.clone();
                         
-                        // Positions are in local space inside a model scaled at 0.026,
+// Positions are in local space inside a model scaled at 0.026,
 // so large local values are needed to reach visible world distances.
 // x/y: radius 250–550 local → ~6.5–14 world units of spread
 // z:   100–350 local → world z roughly -2 to +4 (forward of the
 //      model, around/in front of the viewer) avoiding centre overlap.
-const radius = 250 + Math.random() * 300;
+const radius = 150 + Math.random() * 200;
 const theta = Math.random() * Math.PI * 2;
 const phi = (0.15 + Math.random() * 0.7) * Math.PI; // avoid z-axis poles
 
 child.position.x = radius * Math.sin(phi) * Math.cos(theta);
 child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
-child.position.z = 100 + Math.random() * 250; // forward bias in local space
+child.position.z = 50 + Math.random() * 150; // forward bias in local space
                         
                         child.userData.velocityX = (Math.random() - 0.5) * 0.02;
                         child.userData.velocityY = (Math.random() - 0.5) * 0.02;
