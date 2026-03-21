@@ -1205,7 +1205,7 @@ const phi = (0.1 + Math.random() * 0.4) * Math.PI; // avoid z-axis poles
 
 child.position.x = radius * Math.sin(phi) * Math.cos(theta);
 child.position.y = radius * Math.sin(phi) * Math.sin(theta) - 2.5;
-child.position.z = 20 + Math.random() * 70; // forward bias in local space
+child.position.z = 30 + Math.random() * 100; // forward bias in local space
                         
                         child.scale.multiplyScalar(3);
                         child.userData.velocityX = (Math.random() - 0.5) * 0.02;
