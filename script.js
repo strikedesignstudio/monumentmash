@@ -181,6 +181,15 @@ let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const rotationSpeed = 0.01;
 
+// Pinch zoom
+let lastPinchDistance = null;
+
+function getPinchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
 // Mouse events
 sceneLayer.addEventListener('mousedown', (e) => {
     isDragging = true;
@@ -207,16 +216,22 @@ sceneLayer.addEventListener('mouseup', () => {
 sceneLayer.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
         isDragging = true;
+        lastPinchDistance = null;
         previousMousePosition = { 
             x: e.touches[0].clientX, 
             y: e.touches[0].clientY 
         };
+    } else if (e.touches.length === 2) {
+        isDragging = false;
+        lastPinchDistance = getPinchDistance(e.touches);
     }
 });
 
 sceneLayer.addEventListener('touchmove', (e) => {
-    if (isDragging && e.touches.length === 1) {
-        e.preventDefault();
+    e.preventDefault();
+
+    if (e.touches.length === 1 && isDragging) {
+        // Single finger — pan
         const deltaX = e.touches[0].clientX - previousMousePosition.x;
         const deltaY = e.touches[0].clientY - previousMousePosition.y;
         
@@ -227,11 +242,23 @@ sceneLayer.addEventListener('touchmove', (e) => {
             x: e.touches[0].clientX, 
             y: e.touches[0].clientY 
         };
+    } else if (e.touches.length === 2) {
+        // Two fingers — pinch zoom
+        const currentDistance = getPinchDistance(e.touches);
+
+        if (lastPinchDistance !== null) {
+            const delta = lastPinchDistance - currentDistance;
+            mainCamera.position.z += delta * 0.05;
+            mainCamera.position.z = Math.max(-5, Math.min(mainCamera.position.z, 20));
+        }
+
+        lastPinchDistance = currentDistance;
     }
 }, { passive: false });
 
 sceneLayer.addEventListener('touchend', () => {
     isDragging = false;
+    lastPinchDistance = null;
 });
 
 sceneLayer.addEventListener('wheel', (e) => {
