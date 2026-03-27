@@ -30,26 +30,32 @@ function updateLoadingBar() {
 async function startExperience() {
     experienceStarted = true;
     warpAnimationEnabled = true;
-    
-    // CRITICAL: Resume AudioContext on user interaction (required for mobile)
-    try {
-        if (listener.context.state === 'suspended') {
-            console.log('Resuming audio context...');
-            await listener.context.resume();
-            console.log('Audio context state:', listener.context.state);
-        }
-    } catch (error) {
-        console.error('Error resuming audio context:', error);
-    }
-    
+
+    // CRITICAL: Start resume() SYNCHRONOUSLY while still inside the user gesture.
+    // Mobile Chrome only unlocks the AudioContext if resume() is called before
+    // any await — afterwards the browser considers the gesture "consumed".
+    const audioCtx = listener.context;
+    const unlockPromise = audioCtx.state === 'suspended'
+        ? audioCtx.resume()
+        : Promise.resolve();
+
+    // Do all synchronous work first
     loadingScreen.classList.add('hidden');
-    
+
     if (loadedModel) {
         loadedModel.userData.animationStartTime = performance.now();
     }
-    
+
     playPauseBtn.classList.add('visible');
-    
+
+    // Now it is safe to await
+    try {
+        await unlockPromise;
+        console.log('AudioContext state after resume:', audioCtx.state);
+    } catch (error) {
+        console.error('Error resuming audio context:', error);
+    }
+
     // Try to start audio
     try {
         if (audioBufferShared) {
@@ -69,7 +75,12 @@ async function startExperience() {
     }
 }
 
+// Use both click and touchend so mobile Chrome reliably fires inside a gesture
 startBtn.addEventListener('click', startExperience);
+startBtn.addEventListener('touchend', (e) => {
+    e.preventDefault(); // prevents the ghost click from double-firing
+    startExperience();
+});
 
 // --- ABOUT PAGE TOGGLE ---
 document.addEventListener('DOMContentLoaded', function() {
@@ -459,19 +470,20 @@ audioLoader.load('audio/monmashcompnew.mp3', function (buffer) {
     loadingProgress.audio = 100;
     updateLoadingBar();
     console.log('Audio loaded successfully');
-    
+
+    // NOTE: Do NOT attempt to resume the AudioContext here.
+    // This callback is outside any user gesture, so mobile Chrome will ignore
+    // any resume() call. The context is already running if the user pressed
+    // start before this loaded, so we just call playFrom() directly.
     if (experienceStarted && !isPlaying) {
-        if (listener.context.state === 'suspended') {
-            listener.context.resume().then(() => {
-                playFrom(0);
-                isPlaying = true;
-                playPauseBtn.innerHTML = '⏸';
-            });
-        } else {
+        const audioCtx = listener.context;
+        if (audioCtx.state === 'running') {
             playFrom(0);
             isPlaying = true;
             playPauseBtn.innerHTML = '⏸';
         }
+        // If context is still suspended here, nothing we can do without a
+        // new user gesture — the play button will handle it.
     }
 }, function(xhr) {
     if (xhr.total) {
