@@ -424,34 +424,116 @@ function updateTwoCounters() {
     if (visitedSpan) visitedSpan.textContent = `${visitedMonuments.size}/11`;
 }
 
+// --- STARBURST CELEBRATION ---
+const starburstParticles = [];
+
+function launchStarburst() {
+    const burstColors = [
+        0xff4444, 0xff8800, 0xffdd00, 0x44ff44,
+        0x00ccff, 0x8844ff, 0xff44cc, 0xffffff,
+        0xff6b6b, 0x6bffb8, 0xffe66d, 0x4d96ff
+    ];
+
+    const totalParticles = 120;
+
+    // Fire several waves with slight delays for a cascading burst
+    const waves = 3;
+    for (let w = 0; w < waves; w++) {
+        setTimeout(() => {
+            const perWave = Math.floor(totalParticles / waves);
+            for (let i = 0; i < perWave; i++) {
+                const color = burstColors[Math.floor(Math.random() * burstColors.length)];
+                const size = 0.04 + Math.random() * 0.1;
+
+                const geometry = new THREE.SphereGeometry(size, 6, 6);
+                const material = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color(color),
+                    transparent: true,
+                    opacity: 1.0,
+                    toneMapped: false
+                });
+                const particle = new THREE.Mesh(geometry, material);
+
+                // Start from roughly the centre of the view
+                particle.position.set(
+                    mainCamera.position.x + (Math.random() - 0.5) * 0.5,
+                    mainCamera.position.y + (Math.random() - 0.5) * 0.5,
+                    mainCamera.position.z - 4
+                );
+
+                // Explode outward in a sphere
+                const speed = 0.04 + Math.random() * 0.08;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                particle.userData.velocity = new THREE.Vector3(
+                    speed * Math.sin(phi) * Math.cos(theta),
+                    speed * Math.sin(phi) * Math.sin(theta),
+                    speed * Math.cos(phi)
+                );
+
+                particle.userData.rotationSpeed = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.15,
+                    (Math.random() - 0.5) * 0.15,
+                    (Math.random() - 0.5) * 0.15
+                );
+
+                particle.userData.life = 1.0;
+                particle.userData.fadeSpeed = 0.012 + Math.random() * 0.012;
+                particle.userData.isStarburst = true;
+
+                mainScene.add(particle);
+                starburstParticles.push(particle);
+                explodingMeshes.push(particle); // reuse existing animation loop
+            }
+        }, w * 300);
+    }
+}
+
 // Called whenever a monument is visited or a statue is dissolved
 function updateMonumentCounter() {
     const totalMonuments = Object.keys(audioSegments).length;
     const visitedCount = visitedMonuments.size;
     const totalStatues = 5;
     const dissolvedCount = dissolvedStatues.size;
+    const allVisited = visitedCount >= totalMonuments;
     
     if (monumentCounter) {
-        let message = visitedCount > 0
-            ? `You have visited ${visitedCount}/${totalMonuments} monuments`
-            : `You have visited 0/${totalMonuments} monuments`;
+        let message;
 
-        if (dissolvedCount > 0) {
-            message += `<br>You have dissolved ${dissolvedCount}/${totalStatues} colonial statues`;
+        if (allVisited) {
+            message = '🎉 Congratulations, you have visited all the monuments!';
+        } else {
+            message = visitedCount > 0
+                ? `You have visited ${visitedCount}/${totalMonuments} monuments`
+                : `You have visited 0/${totalMonuments} monuments`;
+
+            if (dissolvedCount > 0) {
+                message += `<br>You have dissolved ${dissolvedCount}/${totalStatues} colonial statues`;
+            }
         }
         
         monumentCounter.innerHTML = message;
 
-        // Fade in, hold 5 seconds, then fade out
+        // Fade in
         monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
         monumentCounter.style.opacity = '1';
 
         // Clear any existing hide timer so rapid clicks don't conflict
         if (monumentCounter._hideTimer) clearTimeout(monumentCounter._hideTimer);
-        monumentCounter._hideTimer = setTimeout(() => {
-            monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
-            monumentCounter.style.opacity = '0';
-        }, 5000);
+
+        if (allVisited) {
+            // Keep the congratulations message visible for longer, then stay dim
+            monumentCounter._hideTimer = setTimeout(() => {
+                monumentCounter.style.transition = 'opacity 1.5s ease-in-out';
+                monumentCounter.style.opacity = '0.4';
+            }, 8000);
+            launchStarburst();
+        } else {
+            monumentCounter._hideTimer = setTimeout(() => {
+                monumentCounter.style.transition = 'opacity 0.6s ease-in-out';
+                monumentCounter.style.opacity = '0';
+            }, 5000);
+        }
     }
 
     updateTwoCounters();
