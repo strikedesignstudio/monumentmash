@@ -894,7 +894,8 @@ function initFullTableModel(modelPath) {
     console.log('Full table model dimensions:', { width, height });
     
     fullTableCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-    fullTableCamera.position.set(0, 2, 5);
+    fullTableCamera.position.set(0, 0, 5);
+    fullTableCamera.lookAt(0, 0, 0); 
     
     fullTableRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     fullTableRenderer.setClearColor(0x000000, 0);
