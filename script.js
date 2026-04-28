@@ -501,7 +501,7 @@ function updateMonumentCounter() {
         let message;
 
         if (allVisited) {
-            message = '🎉 Congratulations, you have visited all the monuments!';
+            message = 'Congratulations, you have visited all the monuments!';
         } else {
             message = visitedCount > 0
                 ? `You have visited ${visitedCount}/${totalMonuments} monuments`
@@ -930,8 +930,6 @@ function initFullTableModel(modelPath) {
             fullTableModel.position.x = -center.x;
             fullTableModel.position.y = -center.y;
             fullTableModel.position.z = -center.z;
-            
-            wrapper.position.y = size.y * scale * 1.5;
             
             fullTableScene.add(wrapper);
             fullTableModel = wrapper;
